@@ -1,0 +1,105 @@
+# some actions which work well with the Tipsy dataset
+# some which do not work
+
+-
+  action: "add_pipelines"
+  pipelines:
+# Histogram sampling does not work
+# Execution failed with vtkm: Could not find appropriate cast for array in CastAndCall.
+# Array: valueType=float storageType=vtkm::cont::StorageTagStride 30766061 values occupying 123064244 bytes
+# TypeList: vtkm::List<float, double>
+    #pl_histsampling:
+      #f1: 
+        #type: "histsampling"
+        #params:
+          #field: "rho"
+          #sample_rate: 0.05
+          #bins: 32
+# Compositing does not work
+# DataSet.cxx:36 The size of field `velocity` (123064244 values) does not match the size of the data set structure (30766061 points).
+# DataSet.cxx:36 The size of field `velocity_magnitude` (123064244 values) does not match the size of the data set structure (30766061 points).
+    #pl_composite_velocity:
+      #f1:
+        #type: "composite_vector"
+        #params:
+          #field1: "vx"
+          #field2: "vy"
+          #field3: "vz"
+          #output_name: "velocity"
+      #f2:
+        #type: "vector_magnitude"
+        #params:
+          #field: "velocity"
+          #output_name: "velocity_magnitude"
+# Planar clip works well with strided data
+    #pl_plane_clip: 
+      #f1: 
+        #type: "clip"
+        #params: 
+          #invert: "true" # "false" removes all particles in the negative zone of "normal"
+          #plane: 
+            #point: 
+              #x: 0.0
+              #y: 0.0
+              #z: 0.0
+            #normal: 
+              #x: 0.0
+              #y: 0.0
+              #z: 1.0
+    pl_box_clip: 
+      f1: 
+        type: "clip"
+        #pipeline: "pl_composite_velocity"
+        params: 
+          invert: "true"
+          box:
+            min:
+              x: -200.0
+              y: -200.0
+              z: -200.0
+            max:
+              x: 200.0
+              y: 200.0
+              z: 200.0
+    pl_threshold_thin_clip_z:
+      f1:
+        type: "threshold"
+        params:
+          field: "z"
+          min_value: -0.1
+          max_value: 0.1
+-
+  action: "add_extracts"
+  extracts:
+    #e1:
+      #type: "relay"
+      #pipeline: "pl_histsampling"
+      #params:
+        #path: "/dev/shm/pl_histsampling"
+        #protocol: "hdf5"
+    e2:
+      type: "relay"
+      pipeline: "pl_box_clip"
+      params:
+        path: "/dev/shm/box_clip"
+        protocol: "hdf5"
+        fields:
+          - rho
+    e3:
+      type: "relay"
+      pipeline: "pl_threshold_thin_clip_z"
+      params:
+        path: "/dev/shm/thin_clip_z"
+        protocol: "hdf5"
+        fields:
+          - rho
+
+# binning does not work
+# Node::as_double() const -- DataType float32 at path value does not equal expected DataType float64
+#-
+  #action: "add_queries"
+  #queries:
+    #q1: 
+      #params:
+        #expression: "binning('', 'pdf', [axis('rho',num_bins=128), axis('Temperature', num_bins=128)])"
+        #name: "var1"

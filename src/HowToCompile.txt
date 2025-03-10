@@ -1,0 +1,61 @@
+# to test the SAO data layout with the optional H5Part data loader
+cmake -B buildCatalyst2 -S . \
+      -DSTRIDED_SCALARS:BOOL=OFF \
+      -DINSITU=Catalyst \
+      -Dcatalyst_DIR=`spack location -i libcatalyst`/lib/cmake/catalyst-2.0
+cmake --build buildCatalyst2
+
+
+cmake -B buildAscent -S . \
+      -DSTRIDED_SCALARS:BOOL=OFF \
+      -DINSITU=Ascent \
+      -DAscent_DIR=/local/apps/Ascent/install/ascent-checkout/lib/cmake/ascent
+cmake --build buildAscent
+
+cmake -B buildAscent-Cuda -S . \
+      -DSTRIDED_SCALARS:BOOL=OFF \
+      -DCMAKE_CUDA_HOST_COMPILER=/usr/bin/g++-12 \
+      -DINSITU=Ascent \
+      -DAscent_DIR=/local/apps/Ascent-cuda/install/ascent-checkout/lib/cmake/ascent
+cmake --build buildAscent-Cuda
+
+##############################################
+# to test the AOS data layout with the optional TIPSY data loader 
+##############################################
+cmake -S . -B buildVTKmStrided \
+      -DINSITU=VTK-m \
+      -DVTKm_DIR=/local/apps/Ascent/install/vtk-m-v2.2.0/lib/cmake/vtkm-2.2 \
+      -DSTRIDED_SCALARS:BOOL=ON -DCAN_LOAD_TIPSY=ON
+cmake --build buildVTKmStrided
+cd buildVTKmStrided
+make && ./bin/dummysph_vtkm --tipsy /local/data/Tipsy/hr8799_bol_bd1.017300
+
+##############################################
+
+cmake -S . -B buildAscentStrided \
+      -DINSITU=Ascent \
+      -DAscent_DIR=/local/apps/Ascent/install/ascent-checkout/lib/cmake/ascent \
+      -DSTRIDED_SCALARS:BOOL=ON -DCAN_LOAD_TIPSY=ON
+      
+cp ../Ascent_yaml/tipsy_actions.yaml buildAscentStrided
+
+cmake --build buildAscentStrided
+cd buildAscentStrided
+make && ./bin/dummysph_ascent --tipsy /local/data/Tipsy/hr8799_bol_bd1.017300
+
+##############################################
+
+cmake -S . -B buildCatalyst2  \
+      -DINSITU=Catalyst \
+      -Dcatalyst_DIR=`spack location -i libcatalyst`/lib/cmake/catalyst-2.0 \
+      -DSTRIDED_SCALARS:BOOL=ON -DCAN_LOAD_TIPSY=ON
+
+cmake --build buildCatalyst2
+
+cd buildCatalyst2
+
+export CATALYST_IMPLEMENTATION_NAME=paraview
+export CATALYST_IMPLEMENTATION_PATHS=/local/apps/ParaView/dev/lib/catalyst
+
+make && ./bin/dummysph_catalystV2 --tipsy /local/data/Tipsy/hr8799_bol_bd1.017300 \
+ --catalyst ../../ParaView_scripts/catalyst_state.py

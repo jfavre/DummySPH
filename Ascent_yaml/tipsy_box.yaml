@@ -1,0 +1,57 @@
+# dealing with vector fields
+# 1) composite independent vector components into a 3-tuple vector
+#    vx, vy, vz are presented to conduit as scalars
+# 2) extracting a component from a 3-tuple vector
+#    "velocity" is presented to conduit as a vector
+# 3) any other variation and combo can be tested to see how strided access work
+-
+  action: "add_pipelines"
+  pipelines:
+    #pl_histsampling:
+      #f1: 
+        #type: "histsampling"
+        #params:
+          #field: "rho"
+          #sample_rate: 0.05
+          #bins: 32
+    pl_geometric_clip: 
+      f1: 
+        type: "clip"
+        params: 
+          invert: "true" # "false" removes all particles in the negative zone of "normal"
+          #plane: 
+            #point: 
+              #x: 0.0
+              #y: 0.0
+              #z: 0.0
+            #normal: 
+              #x: 1.0
+              #y: 0.0
+              #z: 0.0
+          box:
+            min:
+              x: -200.0
+              y: -200.0
+              z: -200.0
+            max:
+              x: 200.0
+              y: 200.0
+              z: 200.0
+-
+  action: "add_extracts"
+  extracts:
+    #e1:
+      #type: "relay"
+      #pipeline: "pl_histsampling"
+      #params:
+        #path: "/dev/shm/pl_histsampling"
+        #protocol: "hdf5"
+    e2:
+      type: "relay"
+      pipeline: "pl_geometric_clip"
+      params:
+        path: "/dev/shm/pl_geometric_clip"
+        protocol: "hdf5"
+        fields:
+          - rho
+          
