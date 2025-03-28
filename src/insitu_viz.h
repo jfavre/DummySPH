@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <string>
 #include "solvers.h"
 
 #ifdef USE_CATALYST
@@ -102,16 +103,17 @@ void init([[maybe_unused]] int argc,
 template<typename T>
 void execute([[maybe_unused]] sph::ParticlesData<T> *sim,
              [[maybe_unused]] int iteration,
-             [[maybe_unused]] int frequency)
+             [[maybe_unused]] int frequency,
+             const std::string &testname, const std::string &FileName)
 {
 #ifdef USE_CATALYST
   CatalystAdaptor::Execute(sim);
 #endif
 #ifdef USE_ASCENT
-  AscentAdaptor::Execute(iteration, frequency, sim);
+  AscentAdaptor::Execute(iteration, frequency, sim, testname, FileName);
 #endif
 #ifdef USE_VTKM
-  VTKmAdaptor::Execute(iteration, frequency, sim);
+  VTKmAdaptor::Execute(iteration, frequency, sim->par_rank, testname, FileName);
 #endif
 }
 

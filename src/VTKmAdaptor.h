@@ -2,6 +2,8 @@
 #define VTKmAdaptor_h
 
 #include <iomanip>
+#include <iostream>
+#include <string>
 
 #include <vtkm/cont/ColorTable.h>
 #include <vtkm/cont/DataSet.h>
@@ -17,7 +19,7 @@
 #include <vtkm/rendering/Actor.h>
 #include <vtkm/rendering/CanvasRayTracer.h>
 #include <vtkm/filter/field_transform/LogValues.h>
-
+#include <vtkm/filter/field_transform/CompositeVectors.h>
 #include <vtkm/rendering/MapperPoint.h>
 #include <vtkm/rendering/MapperRayTracer.h>
 #include <vtkm/rendering/MapperWireframer.h>
@@ -40,6 +42,9 @@ given std::vector<T> x, y, z;         // Positions
 3) coordsArray2 = vtkm::cont::make_ArrayHandleCompositeVector(component1, component2, component3);
 
 ****************************************/
+
+
+
 namespace VTKmAdaptor
 {
   vtkm::rendering::CanvasRayTracer   canvas(1024,1024);
@@ -47,6 +52,11 @@ namespace VTKmAdaptor
   vtkm::rendering::MapperPoint       mapper;
   vtkm::cont::DataSet                dataSet;
   vtkm::Bounds bounds;
+
+void Execute_CompositeVectors(const std::string &filename);
+void Execute_HistSampling(const std::string &filename);
+void Execute_Rendering(const std::string &filename);
+void Execute_ThresholdPoints(const std::string &filename);
 
 template<typename T>
 void Initialize(int argc, char* argv[], sph::ParticlesData<T> *sim)
@@ -149,6 +159,11 @@ void Initialize(int argc, char* argv[], sph::ParticlesData<T> *sim)
   vtkm::cont::ArrayHandleStride<T> vx(AOS, sim->n, sim->NbofScalarfields, 4);
   vtkm::cont::ArrayHandleStride<T> vy(AOS, sim->n, sim->NbofScalarfields, 5);
   vtkm::cont::ArrayHandleStride<T> vz(AOS, sim->n, sim->NbofScalarfields, 6);
+  
+  dataSet.AddPointField("vx", vx);
+  dataSet.AddPointField("vy", vy);
+  dataSet.AddPointField("vz", vz);
+  
   /* first method to view a vector field from its base components */
   auto velArray = vtkm::cont::make_ArrayHandleCompositeVector(vx, vy, vz);
   //vtkm::cont::printSummary_ArrayHandle(velArray, std::cout);
@@ -192,15 +207,95 @@ void Initialize(int argc, char* argv[], sph::ParticlesData<T> *sim)
   //dataSet.PrintSummary(std::cout);
 }
 
-template<typename T>
-void Execute([[maybe_unused]]int it, [[maybe_unused]]int frequency, sph::ParticlesData<T> *sim)
+void Execute(int it, int frequency, int rank, const std::string &testname, const std::string &FileName)
 {
   std::ostringstream fname;
+  fname.str("");
   if(it % frequency == 0)
     {
-#define HISTSAMPLING 1
-#ifdef  HISTSAMPLING
+    if (!testname.compare("histsampling"))
+      {
+      fname << FileName << "." << std::setfill('0') << std::setw(2)
+          << rank << "." << std::setfill('0') << std::setw(4)
+          << it << ".vtk";
+      Execute_HistSampling(fname.str());
+      }
+    else if (!testname.compare("thresholding"))
+      {
+      fname << FileName << "." << std::setfill('0') << std::setw(2)
+          << rank << "." << std::setfill('0') << std::setw(4)
+          << it << ".vtk";
+      Execute_ThresholdPoints(fname.str());
+      }
+    else if (!testname.compare("compositing"))
+      {
+      fname << FileName << "." << std::setfill('0') << std::setw(2)
+          << rank << "." << std::setfill('0') << std::setw(4)
+          << it << ".vtk";
+      Execute_CompositeVectors(fname.str());
+      }
+    else if (!testname.compare("rendering"))
+      {
+      fname << FileName << "." << std::setfill('0') << std::setw(2)
+          << rank << "." << std::setfill('0') << std::setw(4)
+          << it << ".png";
+      Execute_Rendering(fname.str());
+      }
+    }
+}
+
+void Execute_CompositeVectors(const std::string &filename)
+{
+  using AssocType = vtkm::cont::Field::Association;
+  vtkm::filter::field_transform::CompositeVectors compositor;
+  compositor.SetActiveField(0, "vx");
+  compositor.SetActiveField(1, "vy");
+  compositor.SetActiveField(2, "vz");
+  compositor.SetOutputFieldName("vxvyvz");
+  auto compositorDataSet = compositor.Execute(dataSet);
+
+// writing to disk (optional, for debugging only)
+  if(filename.c_str())
+    {
+    vtkm::io::VTKDataSetWriter histsampleWriter(filename.c_str());
+    //histsampleWriter.SetFileTypeToBinary();
+    histsampleWriter.WriteDataSet(compositorDataSet);
+    }
+}
+
+void Execute_HistSampling(const std::string &filename)
+{
   /********** HistSampling *****************/
+  using AssocType = vtkm::cont::Field::Association;
+  vtkm::filter::resampling::HistSampling histsample;
+  histsample.SetNumberOfBins(128);
+  histsample.SetSampleFraction(.01);
+  histsample.SetActiveField("rho", AssocType::Points);
+  auto histsampleDataSet = histsample.Execute(dataSet);
+
+  vtkm::filter::geometry_refinement::ConvertToPointCloud topc;
+  topc.SetFieldsToPass("rho");
+  auto topcDataSet = topc.Execute(histsampleDataSet);
+  
+  //vtkm::filter::field_transform::LogValues lgv;
+  //lgv.SetBaseValueTo10();
+  //lgv.SetActiveField("rho", AssocType::Points);
+  //lgv.SetOutputFieldName("log(rho)");
+  
+  //auto lgvDataSet = lgv.Execute(topcDataSet);
+    
+// writing to disk (optional, for debugging only)
+  if(filename.c_str())
+    {
+    std::cout << "writing histogram sampling output " << filename << std::endl;
+    vtkm::io::VTKDataSetWriter histsampleWriter(filename.c_str());
+    histsampleWriter.SetFileTypeToBinary();
+    histsampleWriter.WriteDataSet(topcDataSet);
+    }
+}
+
+void Execute_Rendering(const std::string &filename)
+{
   using AssocType = vtkm::cont::Field::Association;
   vtkm::filter::resampling::HistSampling histsample;
   histsample.SetNumberOfBins(128);
@@ -212,29 +307,6 @@ void Execute([[maybe_unused]]int it, [[maybe_unused]]int frequency, sph::Particl
   topc.SetFieldsToPass("rho");
   auto topcDataSet = topc.Execute(histsampleDataSet);
   
-  vtkm::filter::field_transform::LogValues lgv;
-  lgv.SetBaseValueTo10();
-  lgv.SetActiveField("rho", AssocType::Points);
-  lgv.SetOutputFieldName("log(rho)");
-  
-  auto lgvDataSet = lgv.Execute(topcDataSet);
-    
-// writing to disk (optional, for debugging only)
-  if(0)
-    {
-    fname.str("");
-    fname << "/dev/shm/histsample." << std::setfill('0') << std::setw(2)
-          << sim->par_rank << "." << std::setfill('0') << std::setw(4)
-          << it << ".vtk";
-    std::cerr << "writing " << fname.str() << std::endl;
-    vtkm::io::VTKDataSetWriter histsampleWriter(fname.str());
-    histsampleWriter.SetFileTypeToBinary();
-    histsampleWriter.WriteDataSet(topcDataSet);
-    }
-    
-#define RENDERING 1 // works, with careful tuning of the pipeline above
-#ifdef  RENDERING
-
   //Creating Actor
   vtkm::cont::ColorTable colorTable("viridis");
   vtkm::rendering::Actor actor(topcDataSet.GetCellSet(),
@@ -249,8 +321,7 @@ void Execute([[maybe_unused]]int it, [[maybe_unused]]int frequency, sph::Particl
   mapper.SetRadius(0.05f);
   mapper.UseVariableRadius(false);
   mapper.SetRadiusDelta(0.05f);
-  fname.str("");
-  fname << "/dev/shm/insitu." << std::setfill('0') << std::setw(4) << it << ".png";
+
   vtkm::rendering::View3D view(scene, mapper, canvas);
 
   // use B=50 for the small Tipsy example
@@ -264,16 +335,14 @@ void Execute([[maybe_unused]]int it, [[maybe_unused]]int frequency, sph::Particl
   view.SetBackgroundColor(vtkm::rendering::Color(1.0f, 1.0f, 1.0f));
   view.SetForegroundColor(vtkm::rendering::Color(0.0f, 0.0f, 0.0f));
   view.Paint();
-  view.SaveAs(fname.str());
-  std::cout << "written image to disk: "<< fname.str() << std::endl;
-#endif
+  view.SaveAs(filename);
+  std::cout << "written image to disk: "<< filename.c_str() << std::endl;
+}
 
-#endif
-
-#define CROSS_SLICING 1
-#ifdef  CROSS_SLICING
+void Execute_ThresholdPoints(const std::string &filename)
+{
   vtkm::filter::entity_extraction::ThresholdPoints thresholdPoints;
-  // 
+
   thresholdPoints.SetThresholdBetween(-0.01, 0.01);
   thresholdPoints.SetActiveField("z");
   thresholdPoints.SetFieldsToPass("rho");
@@ -281,18 +350,12 @@ void Execute([[maybe_unused]]int it, [[maybe_unused]]int frequency, sph::Particl
   auto output = thresholdPoints.Execute(dataSet);
 
 // writing to disk (optional, for debugging only)
-  if(0)
+  if(filename.c_str())
     {
-    fname.str("");
-    fname << "/dev/shm/thresholdPoints." << std::setfill('0') << std::setw(2)
-          << sim->par_rank << "." << std::setfill('0') << std::setw(4) << it
-          << ".vtk";
-    std::cerr << "writing " << fname.str() << std::endl;
-    vtkm::io::VTKDataSetWriter writer(fname.str());
+    std::cout << "writing threshold output to " << filename << std::endl;
+    vtkm::io::VTKDataSetWriter writer(filename.c_str());
     writer.SetFileTypeToBinary();
     writer.WriteDataSet(output);
-    }
-#endif
     }
 }
 

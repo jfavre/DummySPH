@@ -21,6 +21,8 @@ VTKHDataAdapter::PointsImplicitBlueprintToVTKmDataSet()
 #include <vector>
 #include <numeric>
 
+using namespace std;
+
 namespace AscentAdaptor
 {
   ascent::Ascent ascent;
@@ -39,7 +41,7 @@ void Initialize(sph::ParticlesData<T> *sim)
     return;
   }
 
-  std::string output_path = "datasets";
+  string output_path = "datasets";
   ASCENT_INFO("Creating output folder: " + output_path);
   if(!conduit::utils::is_directory(output_path))
   {
@@ -52,7 +54,7 @@ void Initialize(sph::ParticlesData<T> *sim)
   ascent_options["ascent_info"] = "verbose";
   ascent_options["exceptions"] = "forward";
 #ifdef CAMP_HAVE_CUDA
-  ascent_options["runtine/vtkm/backend"] = "cuda";
+  ascent_options["runtime/vtkm/backend"] = "cuda";
 #endif
   ascent.open(ascent_options);
 
@@ -66,7 +68,7 @@ void Initialize(sph::ParticlesData<T> *sim)
   mesh["coordsets/coords/type"] = "explicit";
   mesh["topologies/mesh/coordset"] = "coords";
   
-#define IMPLICIT_CONNECTIVITY_LIST 1 // the connectivity list is not given, but created by vtkm
+//#define IMPLICIT_CONNECTIVITY_LIST 1 // the connectivity list is not given, but created by vtkm
 #ifdef  IMPLICIT_CONNECTIVITY_LIST
   mesh["topologies/mesh/type"] = "points";
 #else
@@ -94,7 +96,7 @@ void Initialize(sph::ParticlesData<T> *sim)
   addStridedField(mesh, "vy",          &(sim->scalarsAOS[0].vel[1]), sim->n, 0, sim->NbofScalarfields);
   addStridedField(mesh, "vz",          &(sim->scalarsAOS[0].vel[2]), sim->n, 0, sim->NbofScalarfields);
 
-  /* there seems to be an offset I don't understand
+  //
   mesh["fields/velocity/association"] = "vertex";
   mesh["fields/velocity/topology"]    = "mesh";
   mesh["fields/velocity/values/u"].set_external(&(sim->scalarsAOS[0].vel[0]), sim->n,
@@ -107,8 +109,6 @@ void Initialize(sph::ParticlesData<T> *sim)
                                                                 0 * sizeof(T),
                                                                 sim->NbofScalarfields * sizeof(T));
   mesh["fields/velocity/volume_dependent"].set("false");
-  */
-  
 #else
   // first the coordinates
   addCoordinates(mesh, sim->x, sim->y, sim->z);
@@ -141,10 +141,10 @@ void Initialize(sph::ParticlesData<T> *sim)
     // Future work
 #else
 // device_move allocates and uses set external to provide data on the device
-    device_move(mesh["coordsets/coords/values/x"], sim->n*sizeof(T));
+    device_move(mesh["coordsets/coords/values/x"], sim->n*sizeof(T));trigger_actions
     device_move(mesh["coordsets/coords/values/y"], sim->n*sizeof(T));
     device_move(mesh["coordsets/coords/values/z"], sim->n*sizeof(T));
-    //device_move(mesh["topologies/mesh/elements/connectivity"], sim->n);
+    device_move(mesh["topologies/mesh/elements/connectivity"], sim->n);
     device_move(mesh["fields/rho/values"], sim->n*sizeof(T));
     device_move(mesh["fields/Temperature/values"], sim->n*sizeof(T));
     device_move(mesh["fields/mass/values"], sim->n*sizeof(T));
@@ -166,59 +166,14 @@ void Initialize(sph::ParticlesData<T> *sim)
   else
     std::cout << "Conduit Blueprint check found contiguous coordinates" << std::endl;
   //mesh.print();
-// Create an action that tells Ascent to:
-//  add a scene (s1) with one plot (p1)
-//  that will render a pseudocolor of 
-//  the mesh field `rho`
-
-  ConduitNode &add_act = actions.append(); 
-  add_act["action"] = "add_scenes";
-
-// declare a scene (s1) and pseudocolor plot (p1)
-  ConduitNode &scenes = add_act["scenes"];
-  scenes["s1/plots/p1/type"] = "pseudocolor";
-//#define RANKS
-#ifdef RANKS
-  scenes["s1/plots/p1/field"] = "ranks";
-  scenes["s1/plots/p1/pipeline"] = "pl1";
-  scenes["s1/plots/p1/color_table/discrete"] = "true";
-#else
-  scenes["s1/plots/p1/field"] = "rho";
-#endif
-  //scenes["s1/plots/p1/points/radius"] = .005;
-  //scenes["s1/plots/p1/points/radius_delta"] = .01;
-  scenes["s1/renders/r1/image_prefix"] = "image.%05d";
-  scenes["s1/renders/r1/annotations"] = "true";
-  double vec3[3];
-  vec3[0] = (sim->par_size-1.0)/2; vec3[1] = (sim->par_size-1.0)/2; vec3[2] = 0.0;
-  scenes["s1/renders/r1/camera/look_at"].set_float64_ptr(vec3,3);
-  vec3[0] = (sim->par_size-1.0)/2; vec3[1] = (sim->par_size-1.0)/2; vec3[2] = 10;
-  scenes["s1/renders/r1/camera/position"].set_float64_ptr(vec3,3);
-  vec3[0] = 0.0; vec3[1] = 1; vec3[2] = 0.0;
-  scenes["s1/renders/r1/camera/up"].set_float64_ptr(vec3,3);
-  scenes["s1/renders/r1/camera/zoom"] = 5.0/sim->par_size;
-  scenes["s1/renders/r1/image_width"] = 1024;
-  scenes["s1/renders/r1/image_height"] = 1024;
-  double dset_bounds[6] = {-1.0, 1.0 * sim->par_size, -1.0, 1.0 * sim->par_size, 0.0, 1.};
-  scenes["s1/renders/r1/dataset_bounds"].set_float64_ptr(dset_bounds, 6);
-/*
-  conduit::Node pipelines;
-  pipelines["pl1/f1/type"] = "add_mpi_ranks";
-  conduit::Node &params = pipelines["pl1/f1/params"];
-  params["topology"] = "mesh";
-  params["output"] = "ranks";
-
-  conduit::Node &add_pipelines = actions.append();
-  add_pipelines["action"] = "add_pipelines";
-  add_pipelines["pipelines"] = pipelines;
-  */
 }
 
 template<typename T>
-void Execute([[maybe_unused]]int it, [[maybe_unused]]int frequency, sph::ParticlesData<T> *sim)
+void Execute([[maybe_unused]]int it, [[maybe_unused]]int frequency, sph::ParticlesData<T> *sim, const string &testname, const string &FileName)
 {
-  if(it % frequency == 0)
-    {
+  string trigger_file = conduit::utils::join_file_path("./","simple_trigger_actions.yaml");
+  conduit::utils::remove_path_if_exists(trigger_file);
+  
 #if defined (ASCENT_CUDA_ENABLED)
 #ifdef STRIDED_SCALARS
     // Future work
@@ -236,9 +191,139 @@ void Execute([[maybe_unused]]int it, [[maybe_unused]]int frequency, sph::Particl
                              sim->vz.data(), sim->n*sizeof(T));
 #endif
 #endif
+    ConduitNode &add_triggers = actions.append();
+    add_triggers["action"] = "add_triggers";
+    ConduitNode &triggers = add_triggers["triggers"];
+    triggers["t1/params/condition"] = "cycle() % 1 == 0";
+    triggers["t1/params/actions_file"] = trigger_file;
+
+    ConduitNode trigger_actions;
+    if (!testname.compare("dumping"))
+      {
+      ConduitNode extracts;
+      extracts["e1/type"]  = "relay";
+      extracts["e1/params/path"] = FileName.c_str();
+      extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+      extracts["e1/params/fields"].append() = "rho";
+
+      ConduitNode &add_ext= trigger_actions.append();
+      add_ext["action"] = "add_extracts";
+      add_ext["extracts"] = extracts;
+      }
+    else if (!testname.compare("histsampling"))
+      {
+      ConduitNode pipelines;
+      pipelines["p1/f1/type"]  = "histsampling";
+      pipelines["p1/f1/params/sample_rate"] = 0.05;
+      pipelines["p1/f1/params/bins"] = 64;
+      pipelines["p1/f1/params/field"] = "rho";
+
+      ConduitNode extracts;
+      extracts["e1/type"]  = "relay";
+      extracts["e1/pipeline"] = "p1";
+      extracts["e1/params/path"] = FileName.c_str();
+      extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+      extracts["e1/params/fields"].append() = "rho";
+
+      ConduitNode &add_pip = trigger_actions.append();
+      add_pip["action"] = "add_pipelines";
+      add_pip["pipelines"] = pipelines;
+
+      ConduitNode &add_ext= trigger_actions.append();
+      add_ext["action"] = "add_extracts";
+      add_ext["extracts"] = extracts;
+      }
+    else if (!testname.compare("thresholding"))
+      {
+      ConduitNode pipelines;
+      pipelines["p1/f1/type"]  = "clip";
+      pipelines["p1/f1/params/invert"] = "true";
+      pipelines["p1/f1/params/box/min/x"] = -20.0;
+      pipelines["p1/f1/params/box/min/y"] = -20.0;
+      pipelines["p1/f1/params/box/min/z"] = -20.0;
+      pipelines["p1/f1/params/box/max/x"] = 20.0;
+      pipelines["p1/f1/params/box/max/y"] = 20.0;
+      pipelines["p1/f1/params/box/max/z"] = 20.0;
+
+      ConduitNode extracts;
+      extracts["e1/type"]  = "relay";
+      extracts["e1/pipeline"] = "p1";
+      extracts["e1/params/path"] = FileName.c_str();
+      extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+      extracts["e1/params/fields"].append() = "rho";
+
+      ConduitNode &add_pip = trigger_actions.append();
+      add_pip["action"] = "add_pipelines";
+      add_pip["pipelines"] = pipelines;
+
+      ConduitNode &add_ext= trigger_actions.append();
+      add_ext["action"] = "add_extracts";
+      add_ext["extracts"] = extracts;
+      }
+    else if (!testname.compare("compositing"))
+      {
+      ConduitNode pipelines;
+      pipelines["p1/f1/type"]  = "composite_vector";
+      pipelines["p1/f1/params/field1"] = "vx";
+      pipelines["p1/f1/params/field2"] = "vy";
+      pipelines["p1/f1/params/field3"] = "vz";
+      //don't call it "velocity" to avoid a potential clash with an already defined "velocity"
+      pipelines["p1/f1/params/output_name"] = "vxvyvz";
+// it seems like vector fields are not supported to be written as Blueprint HDF5
+// "Field type unsupported for conversion to blueprint."
+// so I add a vector magnitude operator
+      pipelines["p1/f2/type"]  = "vector_magnitude";
+      pipelines["p1/f2/params/field"] = "vxvyvz";
+      pipelines["p1/f2/params/output_name"] = "velocity_magnitude";
+
+      ConduitNode extracts;
+      extracts["e1/type"]  = "relay";
+      extracts["e1/pipeline"] = "p1";
+      extracts["e1/params/path"] = FileName.c_str();
+      extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+      extracts["e1/params/fields"].append() = "rho";
+      extracts["e1/params/fields"].append() = "velocity_magnitude";
+
+      ConduitNode &add_pip = trigger_actions.append();
+      add_pip["action"] = "add_pipelines";
+      add_pip["pipelines"] = pipelines;
+
+      ConduitNode &add_ext= trigger_actions.append();
+      add_ext["action"] = "add_extracts";
+      add_ext["extracts"] = extracts;
+      }
+    else if (!testname.compare("rendering"))
+      {
+      ConduitNode scenes;
+      scenes["s1/image_prefix"] = FileName + "_%04d";
+      scenes["s1/plots/p1/type"] = "pseudocolor";
+      scenes["s1/plots/p1/field"] = "rho";
+
+      ConduitNode &add_scene = trigger_actions.append();
+      add_scene["action"] = "add_scenes";
+      add_scene["scenes"] = scenes;
+      }
+    else if (!testname.compare("binning"))
+      {
+      // in this particular case, we use Filedname to hold the variable name, e.g. rho
+      ConduitNode queries;
+      queries["q1/params/expression"] = "min(field('" + FileName + "'))";
+      queries["q1/params/name"] = "min_" + FileName;
+      queries["q2/params/expression"] = "max(field('" + FileName + "'))";
+      queries["q2/params/name"] = "max_" + FileName;
+
+      ConduitNode &add_query = trigger_actions.append();
+      add_query["action"] = "add_queries";
+      add_query["queries"] = queries;
+      std::cout << "See the output in datasets/ascent_session.yaml" << std::endl;
+      }
+    trigger_actions.save(trigger_file);
+
+    //std::cout << trigger_actions.to_yaml() << std::endl;
+
+    //std::cout << actions.to_yaml() << std::endl;
     ascent.publish(mesh);
     ascent.execute(actions);
-    }
 }
 
 //#define DATADUMP 1

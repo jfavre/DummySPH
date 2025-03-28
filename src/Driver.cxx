@@ -20,7 +20,7 @@ Tested Mon  9 Dec 13:50:37 CET 2024
 
 #include <mpi.h> 
 #include <sstream>
-#include <cstring>
+#include <string>
 
 #include "insitu_viz.h"
 #ifdef LOAD_TIPSY
@@ -31,13 +31,14 @@ using namespace sph;
 
 int main(int argc, char *argv[])
 {
-  int it = 0, Niterations = 3, Nparticles = 100; // actually Nparticles^3
+  int it = 0, Niterations = 1, Nparticles = 100; // actually Nparticles^3
   int frequency = 1;
   int par_rank = 0;
   int par_size = 1;
   bool dummydata = true;
   const bool quiet = false;
   std::string TipsyFileName, H5PartFileName;
+  std::string FileName, testname;
   std::ofstream nullOutput("/dev/null");
   std::ostream& output = (quiet || par_rank) ? nullOutput : std::cout;
   sphexa::Timer timer(output);
@@ -57,9 +58,40 @@ int main(int argc, char *argv[])
       H5PartFileName = std::string(argv[cc+1]);
       dummydata = false;
     }
+    // now check for one test name
+    if (strcmp(argv[cc], "--histsampling") == 0 && (cc + 1) < argc)
+    {
+      FileName = std::string(argv[cc+1]);
+      testname = "histsampling";
+    }
+    if (strcmp(argv[cc], "--rendering") == 0 && (cc + 1) < argc)
+    {
+      FileName = std::string(argv[cc+1]);
+      testname = "rendering";
+    }
+    if (strcmp(argv[cc], "--thresholding") == 0 && (cc + 1) < argc)
+    {
+      FileName = std::string(argv[cc+1]);
+      testname = "thresholding";
+    }
+    if (strcmp(argv[cc], "--compositing") == 0 && (cc + 1) < argc)
+    {
+      FileName = std::string(argv[cc+1]);
+      testname = "compositing";
+    }
+    if (strcmp(argv[cc], "--dumping") == 0 && (cc + 1) < argc)
+    {
+      FileName = std::string(argv[cc+1]);
+      testname = "dumping";
+    }
+    if (strcmp(argv[cc], "--binning") == 0 && (cc + 1) < argc)
+    {
+      FileName = std::string(argv[cc+1]);
+      testname = "binning";
+    }
   }
 
-  ParticlesData<float> *sim = new(ParticlesData<float>);
+  ParticlesData<double> *sim = new(ParticlesData<double>);
   if(dummydata)
     sim->AllocateGridMemory(Nparticles);
 #ifdef LOAD_TIPSY
@@ -92,7 +124,7 @@ int main(int argc, char *argv[])
     if(dummydata)
       sim->simulate_one_timestep();
     it++;
-    viz::execute(sim, it, frequency);
+    viz::execute(sim, it, frequency, testname, FileName);
     }
   timer.step("post-exec");
 
