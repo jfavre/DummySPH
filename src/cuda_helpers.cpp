@@ -1,9 +1,9 @@
 #ifndef _CUDA_HELPERS_INCLUDED_
 #define _CUDA_HELPERS_INCLUDED_
 
+#include <cstring>
 #if defined (CAMP_HAVE_CUDA)
 #include <cuda_runtime.h>
-#include <cstring>
 #endif
 
 /*

@@ -141,7 +141,7 @@ void Initialize(sph::ParticlesData<T> *sim)
     // Future work
 #else
 // device_move allocates and uses set external to provide data on the device
-    device_move(mesh["coordsets/coords/values/x"], sim->n*sizeof(T));trigger_actions
+    device_move(mesh["coordsets/coords/values/x"], sim->n*sizeof(T)); //typo? trigger_actions
     device_move(mesh["coordsets/coords/values/y"], sim->n*sizeof(T));
     device_move(mesh["coordsets/coords/values/z"], sim->n*sizeof(T));
     device_move(mesh["topologies/mesh/elements/connectivity"], sim->n);
