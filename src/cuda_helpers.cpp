@@ -3,6 +3,7 @@
 
 #if defined (CAMP_HAVE_CUDA)
 #include <cuda_runtime.h>
+#include <cstring>
 #endif
 
 /*

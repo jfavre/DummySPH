@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 #include <mpi.h>
 #ifdef LOAD_H5Part
 #include <hdf5.h>
