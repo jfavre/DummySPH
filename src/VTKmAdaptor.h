@@ -252,13 +252,15 @@ void Execute_CompositeVectors(const std::string &filename)
   compositor.SetActiveField(1, "vy");
   compositor.SetActiveField(2, "vz");
   compositor.SetOutputFieldName("vxvyvz");
+  compositor.SetFieldsToPass({ "vxvyvz", "velocity", "rho" });
   auto compositorDataSet = compositor.Execute(dataSet);
 
 // writing to disk (optional, for debugging only)
   if(filename.c_str())
     {
     vtkm::io::VTKDataSetWriter histsampleWriter(filename.c_str());
-    //histsampleWriter.SetFileTypeToBinary();
+    histsampleWriter.SetFileTypeToBinary();
+
     histsampleWriter.WriteDataSet(compositorDataSet);
     }
 }
