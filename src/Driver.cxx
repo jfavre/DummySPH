@@ -91,7 +91,11 @@ int main(int argc, char *argv[])
     }
   }
 
+#ifdef SPH_DOUBLE
   ParticlesData<double> *sim = new(ParticlesData<double>);
+#else
+  ParticlesData<float> *sim = new(ParticlesData<float>);
+#endif
   if(dummydata)
     sim->AllocateGridMemory(Nparticles);
 #ifdef LOAD_TIPSY
