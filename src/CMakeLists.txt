@@ -19,7 +19,7 @@ if (NOT MPI_FOUND)
 endif ()
 
 set(C_SRCS
-Driver.cxx
+    Driver.cxx
 )
 
 #add_executable(dummysph ${C_SRCS})
@@ -34,6 +34,8 @@ Driver.cxx
 option(STRIDED_SCALARS "Use interleaved scalar arrays") 
 option(CAN_LOAD_TIPSY  "Use Tipsy data instead of dummy data")
 option(CAN_LOAD_H5Part "Use H5Part data instead of dummy data")
+option(CAN_DATADUMP    "Use relay to write output file")
+option(SPH_DOUBLE      "Use double instead of float" ON)
 
 if(CAN_LOAD_H5Part)
 find_package(HDF5 REQUIRED)
@@ -47,24 +49,35 @@ if(INSITU STREQUAL "Catalyst")
   # we only need C++ compilers if we're building the Adaptor
   enable_language(CXX)
 
-  add_executable(dummysph_catalystV2 ${C_SRCS})
+  set(exename dummysph_catalystV2)
+  add_executable(${exename} ${C_SRCS})
 if(CAN_LOAD_TIPSY)
-  target_compile_definitions(dummysph_catalystV2 PRIVATE LOAD_TIPSY=1)
+  target_compile_definitions(${exename} PRIVATE LOAD_TIPSY=1)
 endif()
-  target_compile_definitions(dummysph_catalystV2 PRIVATE USE_CATALYST=1)
+  target_compile_definitions(${exename} PRIVATE USE_CATALYST=1)
 if(STRIDED_SCALARS)
-  target_compile_definitions(dummysph_catalystV2 PRIVATE STRIDED_SCALARS=1)
+  target_compile_definitions(${exename} PRIVATE STRIDED_SCALARS=1)
 endif()
-  target_link_libraries(dummysph_catalystV2 PRIVATE MPI::MPI_C MPI::MPI_CXX m catalyst::catalyst)
+  target_link_libraries(${exename} PRIVATE MPI::MPI_C MPI::MPI_CXX m catalyst::catalyst)
+if(SPH_DOUBLE)
+  target_compile_definitions(${exename} PRIVATE SPH_DOUBLE=1)
+endif()
 
 elseif(INSITU STREQUAL "Ascent")
   # find_package(Ascent REQUIRED PATHS "/local/apps/ascent/install/lib/cmake/ascent")
   find_package(Ascent REQUIRED PATHS "/capstor/scratch/cscs/piccinal/daint/jf/ascent/install/ascent-checkout")
 
-  add_executable(dummysph_ascent ${C_SRCS})
+  set(exename dummysph_ascent)
+  add_executable(${exename} ${C_SRCS})
+
 if(CAN_LOAD_H5Part)
   target_compile_definitions(dummysph_ascent PRIVATE LOAD_H5Part=1)
 endif()
+
+if(CAN_DATADUMP)
+  target_compile_definitions(dummysph_ascent PRIVATE DATADUMP=1)
+endif()
+
 if(CAN_LOAD_TIPSY)
   target_compile_definitions(dummysph_ascent PRIVATE LOAD_TIPSY=1)
 endif()
@@ -74,6 +87,9 @@ if(STRIDED_SCALARS)
   target_compile_definitions(dummysph_ascent PRIVATE STRIDED_SCALARS=1)
 endif()
   target_link_libraries(dummysph_ascent MPI::MPI_C MPI::MPI_CXX ascent::ascent_mpi)
+if(SPH_DOUBLE)
+  target_compile_definitions(${exename} PRIVATE SPH_DOUBLE=1)
+endif()
 
 elseif(INSITU STREQUAL "VTK-m")
 #set_source_files_properties(${C_SRCS} PROPERTIES LANGUAGE CUDA)
@@ -85,15 +101,16 @@ if(CUDA_FOUND)
 endif()
   find_package(VTKm REQUIRED QUIET)
 
-  add_executable(dummysph_vtkm ${C_SRCS})
+  set(exename dummysph_vtkm)
+  add_executable(${exename} ${C_SRCS})
 if(CAN_LOAD_TIPSY)
-  target_compile_definitions(dummysph_vtkm PRIVATE LOAD_TIPSY=1)
+  target_compile_definitions(${exename} PRIVATE LOAD_TIPSY=1)
 endif()
 
-  target_compile_definitions(dummysph_vtkm PRIVATE USE_VTKM=1)
+  target_compile_definitions(${exename} PRIVATE USE_VTKM=1)
 if(STRIDED_SCALARS)
-  target_compile_definitions(dummysph_vtkm PRIVATE STRIDED_SCALARS=1)
+  target_compile_definitions(${exename} PRIVATE STRIDED_SCALARS=1)
 endif()
-  target_link_libraries(dummysph_vtkm MPI::MPI_C MPI::MPI_CXX vtkm::io vtkm::filter vtkm::rendering)
+  target_link_libraries(${exename} MPI::MPI_C MPI::MPI_CXX vtkm::io vtkm::filter vtkm::rendering)
 endif()
 
