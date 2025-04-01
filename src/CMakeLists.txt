@@ -112,5 +112,9 @@ if(STRIDED_SCALARS)
   target_compile_definitions(${exename} PRIVATE STRIDED_SCALARS=1)
 endif()
   target_link_libraries(${exename} MPI::MPI_C MPI::MPI_CXX vtkm::io vtkm::filter vtkm::rendering)
+if(SPH_DOUBLE)
+  target_compile_definitions(${exename} PRIVATE SPH_DOUBLE=1)
+endif()
+
 endif()
 
