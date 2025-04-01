@@ -343,7 +343,7 @@ void Execute_ThresholdPoints(const std::string &filename)
 {
   vtkm::filter::entity_extraction::ThresholdPoints thresholdPoints;
 
-  thresholdPoints.SetThresholdBetween(-0.01, 0.01);
+  thresholdPoints.SetThresholdBetween(-0.1, 0.1);
   thresholdPoints.SetActiveField("z");
   thresholdPoints.SetFieldsToPass("rho");
   thresholdPoints.SetCompactPoints(true);
