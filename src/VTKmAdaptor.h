@@ -57,6 +57,7 @@ void Execute_CompositeVectors(const std::string &filename);
 void Execute_HistSampling(const std::string &filename);
 void Execute_Rendering(const std::string &filename);
 void Execute_ThresholdPoints(const std::string &filename);
+void Execute_Dumping(const std::string &filename);
 
 template<typename T>
 void Initialize(int argc, char* argv[], sph::ParticlesData<T> *sim)
@@ -241,6 +242,13 @@ void Execute(int it, int frequency, int rank, const std::string &testname, const
           << it << ".png";
       Execute_Rendering(fname.str());
       }
+    else if (!testname.compare("dumping"))
+      {
+      fname << FileName << "." << std::setfill('0') << std::setw(2)
+          << rank << "." << std::setfill('0') << std::setw(4)
+          << it << ".vtk";
+      Execute_Dumping(fname.str());
+      }
     }
 }
 
@@ -328,8 +336,7 @@ void Execute_Rendering(const std::string &filename)
 
   bounds = topcDataSet.GetCoordinateSystem().GetBounds();
   if((bounds.X.Min < -1000.0) && (bounds.X.Max > 1000.0))
-    {
-    // use B=50 for the small Tipsy example
+    {// use B=50 for the small Tipsy example
     float B=50.0;
     bounds = vtkm::Bounds(vtkm::Vec3f_64(-B, -B, -B),
                         vtkm::Vec3f_64(B, B, B));
@@ -364,19 +371,20 @@ void Execute_ThresholdPoints(const std::string &filename)
     }
 }
 
-//#define DATADUMP 1
+void Execute_Dumping(const std::string &filename)
+{
+  if(filename.c_str())
+    {
+    std::cout << "writing dumping output to " << filename << std::endl;
+    vtkm::io::VTKDataSetWriter writer(filename.c_str());
+    writer.SetFileTypeToBinary();
+    writer.WriteDataSet(dataSet);
+    }
+}
 
 void Finalize(int &rank)
 {
-#ifdef DATADUMP
-  std::ostringstream fname;
-  fname << "/dev/shm/finaldataset." << std::setfill('0') << std::setw(2)
-        << rank << ".vtk";
-
-  vtkm::io::VTKDataSetWriter writer(fname.str());
-  writer.SetFileTypeToBinary();
-  writer.WriteDataSet(dataSet);
-#endif
+  std::cout << "Shutting down VTK-m at end of processing\n";
 }
 }
 #endif

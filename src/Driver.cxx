@@ -27,6 +27,32 @@ Tested Mon  9 Dec 13:50:37 CET 2024
 #include "tipsy_file.h"
 #endif
 
+// include the option parser from https://optionparser.sourceforge.net/
+#include "optionparser.h"
+
+enum  optionIndex { UNKNOWN, HELP, TIPSY, H5PART, NPARTICLES, RENDERING, COMPOSITING, THRESHOLDING, HISTSAMPLING, DUMPING, BINNING };
+const option::Descriptor usage[] =
+{
+ {UNKNOWN, 0,"" , ""    ,option::Arg::None, "USAGE: dummysph_* [options]\n\n"
+                                            "Options:" },
+ {HELP,    0,"" , "help",option::Arg::None, "  --help  \tPrint usage and exit." },
+ {TIPSY,    0,"tipsy" , "tipsy",option::Arg::Required, "  --tipsy <filename> \t(reads a PKDGRAV3 dump)" },
+ {H5PART,    0,"h5part" , "h5part",option::Arg::Required, "  --h5part <filename> \t(reads an SPH-EXA dump)" },
+ {NPARTICLES,    0,"n", "n",option::Arg::Numeric, "  --n <num> \tNumber of particles" },
+ {RENDERING,    0,"rendering" , "rendering",option::Arg::Required, "  --rendering  <filename> \t(makes a PNG file)" },
+ {COMPOSITING,    0,"compositing" , "compositing",option::Arg::Required, "  --thresholding <filename> \t(dumps a Conduit Blueprint HDF5 file)" },
+ {THRESHOLDING,    0,"thresholding" , "thresholding",option::Arg::Required, "  --thresholding <filename> \t(dumps a Conduit Blueprint HDF5 file)" },
+ {HISTSAMPLING,    0,"histsampling" , "histsampling",option::Arg::Required, "  --histsampling <filename> \t(dumps a Conduit Blueprint HDF5 file)" },
+ {DUMPING,    0,"dumping" , "dumping",option::Arg::Required, "  --dumping <filename> \t(dumps a Conduit Blueprint HDF5 or VTK file)" },
+ {BINNING,    0,"" , "binning",option::Arg::None, "  --binning \t(results are in ascent_session.yaml file)" },
+ {UNKNOWN, 0,"" ,  ""   ,option::Arg::Required, "\nExamples:\n"
+                                            "  dummysph_* --compositing filename\n"
+                                            "  dummysph_* --n 100 --rendering filename\n"
+                                            "  dummysph_* --tipsy hr8799_bol_bd1.017300 --histsampling blueprintHS\n"
+                                            },
+ {0,0,0,0,0,0}
+};
+
 using namespace sph;
 
 int main(int argc, char *argv[])
@@ -46,48 +72,62 @@ int main(int argc, char *argv[])
   MPI_Comm_rank(MPI_COMM_WORLD, &par_rank);
   MPI_Comm_size(MPI_COMM_WORLD, &par_size);
 
-  for (int cc = 1; cc < argc; ++cc)
+  argc -= (argc>0); argv+=(argc>0); // skip program name argv[0] if present
+  option::Stats  stats(usage, argc, argv);
+  option::Option options[stats.options_max], buffer[stats.buffer_max];
+  option::Parser parse(usage, argc, argv, options, buffer);
+  if (parse.error())
+    return 1;
+  if (options[HELP] || argc == 0) {
+    option::printUsage(std::cout, usage);
+    return 0;
+  }
+
+  for (int i = 0; i < parse.optionsCount(); ++i)
   {
-    if (strcmp(argv[cc], "--tipsy") == 0 && (cc + 1) < argc)
+    option::Option& opt = buffer[i];
+    switch (opt.index())
     {
-      TipsyFileName = std::string(argv[cc+1]);
-      dummydata = false;
-    }
-    if (strcmp(argv[cc], "--h5part") == 0 && (cc + 1) < argc)
-    {
-      H5PartFileName = std::string(argv[cc+1]);
-      dummydata = false;
-    }
-    // now check for one test name
-    if (strcmp(argv[cc], "--histsampling") == 0 && (cc + 1) < argc)
-    {
-      FileName = std::string(argv[cc+1]);
-      testname = "histsampling";
-    }
-    if (strcmp(argv[cc], "--rendering") == 0 && (cc + 1) < argc)
-    {
-      FileName = std::string(argv[cc+1]);
-      testname = "rendering";
-    }
-    if (strcmp(argv[cc], "--thresholding") == 0 && (cc + 1) < argc)
-    {
-      FileName = std::string(argv[cc+1]);
-      testname = "thresholding";
-    }
-    if (strcmp(argv[cc], "--compositing") == 0 && (cc + 1) < argc)
-    {
-      FileName = std::string(argv[cc+1]);
-      testname = "compositing";
-    }
-    if (strcmp(argv[cc], "--dumping") == 0 && (cc + 1) < argc)
-    {
-      FileName = std::string(argv[cc+1]);
-      testname = "dumping";
-    }
-    if (strcmp(argv[cc], "--binning") == 0 && (cc + 1) < argc)
-    {
-      FileName = std::string(argv[cc+1]);
-      testname = "binning";
+      case HELP:
+        // not possible, because handled further above and exits the program
+      case NPARTICLES:
+        Nparticles = atoi(opt.arg);
+        break;
+      case TIPSY:
+        TipsyFileName = opt.arg;
+        dummydata = false;
+        break;
+      case H5PART:
+        H5PartFileName = opt.arg;
+        dummydata = false;
+        break;
+     case HISTSAMPLING:
+        FileName = opt.arg;
+        testname = "histsampling";
+        break;
+     case RENDERING:
+        FileName = opt.arg;
+        testname = "rendering";
+        break;
+     case THRESHOLDING:
+        FileName = opt.arg;
+        testname = "thresholding";
+        break;
+     case COMPOSITING:
+        FileName = opt.arg;
+        testname = "compositing";
+        break;
+     case BINNING:
+        FileName = opt.arg;
+        testname = "binning";
+        break;
+     case DUMPING:
+        FileName = opt.arg;
+        testname = "dumping";
+        break;
+     case UNKNOWN:
+        std::cerr << "Unknown option\n"; option::printUsage(std::cerr, usage); exit(1);
+        break;
     }
   }
 
