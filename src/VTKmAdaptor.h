@@ -301,7 +301,7 @@ void Execute_Rendering(const std::string &filename)
   using AssocType = vtkm::cont::Field::Association;
   vtkm::filter::resampling::HistSampling histsample;
   histsample.SetNumberOfBins(128);
-  histsample.SetSampleFraction(.1);
+  histsample.SetSampleFraction(.2);
   histsample.SetActiveField("rho", AssocType::Points);
   auto histsampleDataSet = histsample.Execute(dataSet);
 
@@ -326,11 +326,14 @@ void Execute_Rendering(const std::string &filename)
 
   vtkm::rendering::View3D view(scene, mapper, canvas);
 
-  // use B=50 for the small Tipsy example
-  float B=50.0;
-  bounds = vtkm::Bounds(vtkm::Vec3f_64(-B, -B, -B),
+  bounds = topcDataSet.GetCoordinateSystem().GetBounds();
+  if((bounds.X.Min < -1000.0) && (bounds.X.Max > 1000.0))
+    {
+    // use B=50 for the small Tipsy example
+    float B=50.0;
+    bounds = vtkm::Bounds(vtkm::Vec3f_64(-B, -B, -B),
                         vtkm::Vec3f_64(B, B, B));
-
+    }
   view.GetCamera().ResetToBounds(bounds);
   view.GetCamera().Azimuth(30.0);
   view.GetCamera().Elevation(30.0);
