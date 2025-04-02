@@ -40,7 +40,7 @@ const option::Descriptor usage[] =
  {H5PART,    0,"h5part" , "h5part",option::Arg::Required, "  --h5part <filename> \t(reads an SPH-EXA dump)" },
  {NPARTICLES,    0,"n", "n",option::Arg::Numeric, "  --n <num> \tNumber of particles" },
  {RENDERING,    0,"rendering" , "rendering",option::Arg::Required, "  --rendering  <filename> \t(makes a PNG file)" },
- {COMPOSITING,    0,"compositing" , "compositing",option::Arg::Required, "  --thresholding <filename> \t(dumps a Conduit Blueprint HDF5 file)" },
+ {COMPOSITING,    0,"compositing" , "compositing",option::Arg::Required, "  --compositing <filename> \t(dumps a Conduit Blueprint HDF5 file)" },
  {THRESHOLDING,    0,"thresholding" , "thresholding",option::Arg::Required, "  --thresholding <filename> \t(dumps a Conduit Blueprint HDF5 file)" },
  {HISTSAMPLING,    0,"histsampling" , "histsampling",option::Arg::Required, "  --histsampling <filename> \t(dumps a Conduit Blueprint HDF5 file)" },
  {DUMPING,    0,"dumping" , "dumping",option::Arg::Required, "  --dumping <filename> \t(dumps a Conduit Blueprint HDF5 or VTK file)" },
