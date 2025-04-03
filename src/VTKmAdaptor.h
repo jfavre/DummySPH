@@ -43,8 +43,6 @@ given std::vector<T> x, y, z;         // Positions
 
 ****************************************/
 
-
-
 namespace VTKmAdaptor
 {
   vtkm::rendering::CanvasRayTracer   canvas(1024,1024);
@@ -85,15 +83,31 @@ void Initialize(int argc, char* argv[], sph::ParticlesData<T> *sim)
   */
   /****************************************/
 #ifdef STRIDED_SCALARS
+  // NOTE: In this case, the num_vals, needs to be
+  // the full extent of the strided area, thus sim->n*sim->NbofScalarfields
+  std::cout << "creating fields with strided access\n";
 // base of the AOS struct{}. every field will be offset from that base
   auto AOS = vtkm::cont::make_ArrayHandle<T>(&sim->scalarsAOS[0].mass,
                                              sim->n * sim->NbofScalarfields,
                                              vtkm::CopyFlag::Off);
-// coordinates are at offset 1, 2, 3 (x, y, z)
-  vtkm::cont::ArrayHandleStride<T> pos_x (AOS, sim->n, sim->NbofScalarfields, 1);
-  vtkm::cont::ArrayHandleStride<T> pos_y (AOS, sim->n, sim->NbofScalarfields, 2);
-  vtkm::cont::ArrayHandleStride<T> pos_z (AOS, sim->n, sim->NbofScalarfields, 3);
+  // starting at offset 0
+  vtkm::cont::ArrayHandleStride<T>  aos0(AOS, sim->n, sim->NbofScalarfields, 0);
+  // coordinates are at offset 1, 2, 3 (x, y, z)
+  vtkm::cont::ArrayHandleStride<T> pos_x(AOS, sim->n, sim->NbofScalarfields, 1);
+  vtkm::cont::ArrayHandleStride<T> pos_y(AOS, sim->n, sim->NbofScalarfields, 2);
+  vtkm::cont::ArrayHandleStride<T> pos_z(AOS, sim->n, sim->NbofScalarfields, 3);
+
+  vtkm::cont::ArrayHandleStride<T>    vx(AOS, sim->n, sim->NbofScalarfields, 4);
+  vtkm::cont::ArrayHandleStride<T>    vy(AOS, sim->n, sim->NbofScalarfields, 5);
+  vtkm::cont::ArrayHandleStride<T>    vz(AOS, sim->n, sim->NbofScalarfields, 6);
+  vtkm::cont::ArrayHandleStride<T>  aos7(AOS, sim->n, sim->NbofScalarfields, 7);
+  vtkm::cont::ArrayHandleStride<T>  aos8(AOS, sim->n, sim->NbofScalarfields, 8);
+  // first method to view a vector field from its base components
+  auto velArray = vtkm::cont::make_ArrayHandleCompositeVector(vx, vy, vz);
+  //vtkm::cont::printSummary_ArrayHandle(velArray, std::cout);
 #else
+  std::cout << "creating fields with independent (stride=1) access\n";
+//https://vtk-m.readthedocs.io/en/stable/basic-array-handles.html#ex-arrayhandlefromvector
 /*
   auto coordsArray1 =
     vtkm::cont::make_ArrayHandleSOA<vtkm::Vec3f>({sim->x, sim->y, sim->z});
@@ -107,9 +121,25 @@ void Initialize(int argc, char* argv[], sph::ParticlesData<T> *sim)
   */
   /****************************************/
   // https://vtk-m.readthedocs.io/en/v2.2.0/fancy-array-handles.html#composite-vector-arrays
-  auto pos_x = vtkm::cont::make_ArrayHandle<T>(sim->x, vtkm::CopyFlag::Off);
-  auto pos_y = vtkm::cont::make_ArrayHandle<T>(sim->y, vtkm::CopyFlag::Off);
-  auto pos_z = vtkm::cont::make_ArrayHandle<T>(sim->z, vtkm::CopyFlag::Off);
+  auto aos0  = vtkm::cont::make_ArrayHandle<T>(sim->mass, vtkm::CopyFlag::Off);
+  auto pos_x = vtkm::cont::make_ArrayHandle<T>(sim->x,    vtkm::CopyFlag::Off);
+  auto pos_y = vtkm::cont::make_ArrayHandle<T>(sim->y,    vtkm::CopyFlag::Off);
+  auto pos_z = vtkm::cont::make_ArrayHandle<T>(sim->z,    vtkm::CopyFlag::Off);
+  auto vx    = vtkm::cont::make_ArrayHandle<T>(sim->vx,   vtkm::CopyFlag::Off); 
+  auto vy    = vtkm::cont::make_ArrayHandle<T>(sim->vy,   vtkm::CopyFlag::Off); 
+  auto vz    = vtkm::cont::make_ArrayHandle<T>(sim->vz,   vtkm::CopyFlag::Off);
+  auto aos7  = vtkm::cont::make_ArrayHandle<T>(sim->rho,  vtkm::CopyFlag::Off);
+  auto aos8  = vtkm::cont::make_ArrayHandle<T>(sim->temp, vtkm::CopyFlag::Off);
+  
+  /*
+  // first method to view a vector field from its base components
+  auto velArray = vtkm::cont::make_ArrayHandleCompositeVector(vx, vy, vz);
+  vtkm::cont::printSummary_ArrayHandle(velArray, std::cout);
+  dataSet.AddPointField("velocity", velArray);
+  */
+  // second method to view a vector field from its base components
+  auto velArray = vtkm::cont::make_ArrayHandleSOA(vx, vy, vz);
+  //vtkm::cont::printSummary_ArrayHandle(velArray, std::cout);
 #endif
   
   auto coordsArray2 =
@@ -123,12 +153,6 @@ void Initialize(int argc, char* argv[], sph::ParticlesData<T> *sim)
   //std::cout << "POSITIONS2 HANDLE" << std::endl;
   //vtkm::cont::printSummary_ArrayHandle(positions2, std::cout);
   //std::cout << "--------------------------" << std::endl;
-  
-  bounds = vtkm::Bounds(vtkm::Vec3f_64(-1.0, -1.0, -1.0),
-                        vtkm::Vec3f_64(2.0*sim->par_size - 1.0,
-                                       2.0*sim->par_size - 1.0,
-                                       2.0*sim->par_size - 1.0)
-                       );
 
   vtkm::cont::ArrayHandle<vtkm::Id> connectivity;
   vtkm::cont::ArrayCopy(vtkm::cont::make_ArrayHandleIndex(static_cast<vtkm::Id>(sim->n)), connectivity);
@@ -139,72 +163,16 @@ void Initialize(int argc, char* argv[], sph::ParticlesData<T> *sim)
                                   numberOfPointsPerCell,
                                   connectivity, "coords");
 
-#ifdef STRIDED_SCALARS
-  // NOTE: In this case, the num_vals, needs to be
-  // the full extent of the strided area, thus sim->n*sim->NbofScalarfields
-  std::cout << "creating fields with strided access\n";
-
-  vtkm::cont::ArrayHandleStride<T> aos1 (AOS, sim->n, sim->NbofScalarfields, 7);
-  dataSet.AddPointField("rho", aos1);
-  
-  vtkm::cont::ArrayHandleStride<T> aos2(AOS, sim->n, sim->NbofScalarfields, 8);
-  dataSet.AddPointField("temp", aos2);
-  
-  vtkm::cont::ArrayHandleStride<T> aos3(AOS, sim->n, sim->NbofScalarfields, 0);
-  dataSet.AddPointField("mass", aos3);
-  
+  dataSet.AddPointField("mass", aos0);
   dataSet.AddPointField("x", pos_x);
   dataSet.AddPointField("y", pos_y);
   dataSet.AddPointField("z", pos_z);
-
-  vtkm::cont::ArrayHandleStride<T> vx(AOS, sim->n, sim->NbofScalarfields, 4);
-  vtkm::cont::ArrayHandleStride<T> vy(AOS, sim->n, sim->NbofScalarfields, 5);
-  vtkm::cont::ArrayHandleStride<T> vz(AOS, sim->n, sim->NbofScalarfields, 6);
-  
   dataSet.AddPointField("vx", vx);
   dataSet.AddPointField("vy", vy);
   dataSet.AddPointField("vz", vz);
-  
-  /* first method to view a vector field from its base components */
-  auto velArray = vtkm::cont::make_ArrayHandleCompositeVector(vx, vy, vz);
-  //vtkm::cont::printSummary_ArrayHandle(velArray, std::cout);
+  dataSet.AddPointField("rho", aos7);
+  dataSet.AddPointField("temp", aos8);
   dataSet.AddPointField("velocity", velArray);
-#else
-  std::cout << "creating fields with independent (stride=1) access\n";
-//https://vtk-m.readthedocs.io/en/stable/basic-array-handles.html#ex-arrayhandlefromvector
-
-  auto dataArray1 = vtkm::cont::make_ArrayHandle<T>(sim->rho, vtkm::CopyFlag::Off);
-  dataSet.AddPointField("rho", dataArray1);
-
-  auto dataArrayx = vtkm::cont::make_ArrayHandle<T>(sim->x, vtkm::CopyFlag::Off);
-  dataSet.AddPointField("x", dataArrayx);
-    auto dataArrayy = vtkm::cont::make_ArrayHandle<T>(sim->y, vtkm::CopyFlag::Off);
-  dataSet.AddPointField("y", dataArrayy);
-    auto dataArrayz = vtkm::cont::make_ArrayHandle<T>(sim->z, vtkm::CopyFlag::Off);
-  dataSet.AddPointField("z", dataArrayz);
-  
-  auto dataArray2 = vtkm::cont::make_ArrayHandle(sim->temp, vtkm::CopyFlag::Off);
-  dataSet.AddPointField("Temperature", dataArray2);
-  
-  auto dataArray3 = vtkm::cont::make_ArrayHandle(sim->mass, vtkm::CopyFlag::Off);
-  dataSet.AddPointField("mass", dataArray3);
-
-  auto vx = vtkm::cont::make_ArrayHandle(sim->vx, vtkm::CopyFlag::Off); 
-  auto vy = vtkm::cont::make_ArrayHandle(sim->vy, vtkm::CopyFlag::Off); 
-  auto vz = vtkm::cont::make_ArrayHandle(sim->vz, vtkm::CopyFlag::Off);
-    /*
-  // first method to view a vector field from its base components
-  auto velArray = vtkm::cont::make_ArrayHandleCompositeVector(vx, vy, vz);
-  vtkm::cont::printSummary_ArrayHandle(velArray, std::cout);
-  dataSet.AddPointField("velocity", velArray);
-  */
-  // second method to view a vector field from its base components
-  auto velArray2 = vtkm::cont::make_ArrayHandleSOA(vx, vy, vz);
-  vtkm::cont::printSummary_ArrayHandle(velArray2, std::cout);
-  dataSet.AddPointField("velocity2", velArray2);
-   //
-#endif
-
   //dataSet.PrintSummary(std::cout);
 }
 
