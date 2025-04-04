@@ -57,10 +57,27 @@ void Execute_Rendering(const std::string &filename);
 void Execute_ThresholdPoints(const std::string &filename);
 void Execute_Dumping(const std::string &filename);
 
+#ifdef VTKm_ENABLE_CUDA
+template<typename T>
+T *
+device_alloc(int size, const T *data)
+{
+  void *buff;
+  cudaMalloc(&buff, size * sizeof(T));
+  cudaMemcpy(buff, data, size * sizeof(T), cudaMemcpyHostToDevice);
+  return static_cast<T*>(buff);
+}
+#endif
+
 template<typename T>
 void Initialize(int argc, char* argv[], sph::ParticlesData<T> *sim)
 {
   std::cout << "VTK-m::Initialize" << std::endl;
+
+#ifdef VTKm_ENABLE_CUDA
+  std::cout << "forcing DeviceAdapterTagCuda" << std::endl;
+  vtkm::cont::ScopedRuntimeDeviceTracker(vtkm::cont::DeviceAdapterTagCuda{});
+#endif
 
   vtkm::cont::Initialize(argc, argv);
 
@@ -86,10 +103,21 @@ void Initialize(int argc, char* argv[], sph::ParticlesData<T> *sim)
   // NOTE: In this case, the num_vals, needs to be
   // the full extent of the strided area, thus sim->n*sim->NbofScalarfields
   std::cout << "creating fields with strided access\n";
+#ifdef VTKm_ENABLE_CUDA
+  std::cout << "copying single block data to device\n";
+  T *device_AOS  = device_alloc(sim->n * sim->NbofScalarfields, &sim->scalarsAOS[0].mass);
+  auto AOS = vtkm::cont::make_ArrayHandle<T>(device_AOS,
+                                             sim->n * sim->NbofScalarfields,
+                                             vtkm::CopyFlag::Off);
+  sim->scalarsAOS.clear(); // just to make sure we're going to the device
+  sim->scalarsAOS = std::vector<sph::ParticlesData<float>::tipsySph>();
+#else
+  std::cout << "using host-allocated data\n";
 // base of the AOS struct{}. every field will be offset from that base
   auto AOS = vtkm::cont::make_ArrayHandle<T>(&sim->scalarsAOS[0].mass,
                                              sim->n * sim->NbofScalarfields,
                                              vtkm::CopyFlag::Off);
+#endif
   // starting at offset 0
   vtkm::cont::ArrayHandleStride<T>  aos0(AOS, sim->n, sim->NbofScalarfields, 0);
   // coordinates are at offset 1, 2, 3 (x, y, z)
@@ -121,16 +149,39 @@ void Initialize(int argc, char* argv[], sph::ParticlesData<T> *sim)
   */
   /****************************************/
   // https://vtk-m.readthedocs.io/en/v2.2.0/fancy-array-handles.html#composite-vector-arrays
+  
+#ifdef VTKm_ENABLE_CUDA
+  std::cout << "copying individual fields data to device\n";
+  T *device_aos0  = device_alloc(sim->n, sim->mass.data());
+  T *device_pos_x = device_alloc(sim->n, sim->x.data());
+  T *device_pos_y = device_alloc(sim->n, sim->y.data());
+  T *device_pos_z = device_alloc(sim->n, sim->z.data());
+  T *device_vx    = device_alloc(sim->n, sim->vx.data());
+  T *device_vy    = device_alloc(sim->n, sim->vy.data());
+  T *device_vz    = device_alloc(sim->n, sim->vz.data());
+  T *device_aos7  = device_alloc(sim->n, sim->rho.data());
+  T *device_aos8  = device_alloc(sim->n, sim->temp.data());
+  
+  auto aos0  = vtkm::cont::make_ArrayHandle(device_aos0,  sim->n, vtkm::CopyFlag::Off);
+  auto pos_x = vtkm::cont::make_ArrayHandle(device_pos_x, sim->n, vtkm::CopyFlag::Off);
+  auto pos_y = vtkm::cont::make_ArrayHandle(device_pos_y, sim->n, vtkm::CopyFlag::Off);
+  auto pos_z = vtkm::cont::make_ArrayHandle(device_pos_z, sim->n, vtkm::CopyFlag::Off);
+  auto vx    = vtkm::cont::make_ArrayHandle(device_vx,    sim->n, vtkm::CopyFlag::Off);
+  auto vy    = vtkm::cont::make_ArrayHandle(device_vy,    sim->n, vtkm::CopyFlag::Off);
+  auto vz    = vtkm::cont::make_ArrayHandle(device_vz,    sim->n, vtkm::CopyFlag::Off);
+  auto aos7  = vtkm::cont::make_ArrayHandle(device_aos7,  sim->n, vtkm::CopyFlag::Off);
+  auto aos8  = vtkm::cont::make_ArrayHandle(device_aos8,  sim->n, vtkm::CopyFlag::Off);
+#else
   auto aos0  = vtkm::cont::make_ArrayHandle<T>(sim->mass, vtkm::CopyFlag::Off);
   auto pos_x = vtkm::cont::make_ArrayHandle<T>(sim->x,    vtkm::CopyFlag::Off);
   auto pos_y = vtkm::cont::make_ArrayHandle<T>(sim->y,    vtkm::CopyFlag::Off);
   auto pos_z = vtkm::cont::make_ArrayHandle<T>(sim->z,    vtkm::CopyFlag::Off);
-  auto vx    = vtkm::cont::make_ArrayHandle<T>(sim->vx,   vtkm::CopyFlag::Off); 
-  auto vy    = vtkm::cont::make_ArrayHandle<T>(sim->vy,   vtkm::CopyFlag::Off); 
+  auto vx    = vtkm::cont::make_ArrayHandle<T>(sim->vx,   vtkm::CopyFlag::Off);
+  auto vy    = vtkm::cont::make_ArrayHandle<T>(sim->vy,   vtkm::CopyFlag::Off);
   auto vz    = vtkm::cont::make_ArrayHandle<T>(sim->vz,   vtkm::CopyFlag::Off);
   auto aos7  = vtkm::cont::make_ArrayHandle<T>(sim->rho,  vtkm::CopyFlag::Off);
   auto aos8  = vtkm::cont::make_ArrayHandle<T>(sim->temp, vtkm::CopyFlag::Off);
-  
+#endif
   /*
   // first method to view a vector field from its base components
   auto velArray = vtkm::cont::make_ArrayHandleCompositeVector(vx, vy, vz);
@@ -140,6 +191,7 @@ void Initialize(int argc, char* argv[], sph::ParticlesData<T> *sim)
   // second method to view a vector field from its base components
   auto velArray = vtkm::cont::make_ArrayHandleSOA(vx, vy, vz);
   //vtkm::cont::printSummary_ArrayHandle(velArray, std::cout);
+
 #endif
   
   auto coordsArray2 =
@@ -163,15 +215,15 @@ void Initialize(int argc, char* argv[], sph::ParticlesData<T> *sim)
                                   numberOfPointsPerCell,
                                   connectivity, "coords");
 
-  dataSet.AddPointField("mass", aos0);
-  dataSet.AddPointField("x", pos_x);
-  dataSet.AddPointField("y", pos_y);
-  dataSet.AddPointField("z", pos_z);
-  dataSet.AddPointField("vx", vx);
-  dataSet.AddPointField("vy", vy);
-  dataSet.AddPointField("vz", vz);
-  dataSet.AddPointField("rho", aos7);
-  dataSet.AddPointField("temp", aos8);
+  dataSet.AddPointField("mass",     aos0);
+  dataSet.AddPointField("x",        pos_x);
+  dataSet.AddPointField("y",        pos_y);
+  dataSet.AddPointField("z",        pos_z);
+  dataSet.AddPointField("vx",       vx);
+  dataSet.AddPointField("vy",       vy);
+  dataSet.AddPointField("vz",       vz);
+  dataSet.AddPointField("rho",      aos7);
+  dataSet.AddPointField("temp",     aos8);
   dataSet.AddPointField("velocity", velArray);
   //dataSet.PrintSummary(std::cout);
 }
