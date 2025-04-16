@@ -24,7 +24,6 @@ void Initialize(int argc, char* argv[])
       // alternatively, use this form to pass optional parameters to the script.
       const auto path = "catalyst/scripts/script" + std::to_string(cc - 1);
       node[path + "/filename"].set_string(fname);
-      std::cout << "               : --catalyst script " << fname << std::endl;
     }
   }
 
@@ -129,7 +128,7 @@ void Execute(sph::ParticlesData<T> *sim)
     std::cerr << "ERROR: Failed to execute Catalyst: " << err << std::endl;
   }
 
-  //conduit_node_save(c_node(&mesh), "my_output.json", "json");
+  conduit_node_save(c_node(&mesh), "my_output.json", "json");
 
 }
 

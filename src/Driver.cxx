@@ -144,6 +144,7 @@ int main(int argc, char *argv[])
 #else
   ParticlesData<float> *sim = new(ParticlesData<float>);
 #endif
+std::cerr << __LINE__ << "dummydata = " << dummydata << " H5PartFileName = " << H5PartFileName << std::endl;
   if(dummydata)
     sim->AllocateGridMemory(Nparticles);
 #ifdef LOAD_TIPSY

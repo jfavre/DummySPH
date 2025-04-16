@@ -40,7 +40,7 @@ static int ReadHDF5Dataset(const char *name, const hid_t mesh_id, void *data, in
       }
     }
     H5Dclose(dset_id);
-    return dimsf[0];
+    return dimsf[0]; // returns number of particles
 }
 #endif
 
@@ -73,10 +73,10 @@ class ParticlesData
     static constexpr int NbofScalarfields = sizeof(tipsySph)/sizeof(T);
 #else
     std::vector<T> mass;            // "mass"
-    std::vector<T> x, y, z;         // Positions
+    std::vector<double> x, y, z;         // Positions
     std::vector<T> vx, vy, vz;      // Velocities
     std::vector<T> rho;             // Density
-    std::vector<T> temp;            // Temperature
+    std::vector<double> temp;            // Temperature
 
     static constexpr int NbofScalarfields = 9;
 #endif
@@ -118,38 +118,48 @@ class ParticlesData
         hid_t step_id = H5Gopen(root_id, "Step#0", H5P_DEFAULT);
         if (step_id != H5I_INVALID_HID)
           {
+          int N;
 // N.B. x,y,z,temp are doubles, the others are float
 // thus, in Driver.cxx you must use   ParticlesData<float> *sim = new(ParticlesData<float>);
           std::cout << __LINE__ << " :found valid HDF5 Step#0 " << std::endl;
           std::cout << "Allocating 9 std::vectors of scalar fields"<<std::endl;
 
           this->x.resize(this->n);
-          ReadHDF5Dataset("x", step_id, this->x.data(), sizeof(double));
-
+          N = ReadHDF5Dataset("x", step_id, this->x.data(), sizeof(double));
+          if(N != this->n) std::cerr << __LINE__ << "  Error reading dataset" << std::endl;
+          
           this->y.resize(this->n);
-          ReadHDF5Dataset("y", step_id, this->y.data(), sizeof(double));
-
+          N = ReadHDF5Dataset("y", step_id, this->y.data(), sizeof(double));
+          if(N != this->n) std::cerr << __LINE__ << "  Error reading dataset" << std::endl;
+          
           this->z.resize(this->n);
-          ReadHDF5Dataset("z", step_id, this->z.data(), sizeof(double));
-
+          N = ReadHDF5Dataset("z", step_id, this->z.data(), sizeof(double));
+          if(N != this->n) std::cerr << __LINE__ << "  Error reading dataset" << std::endl;
+          
           this->vx.resize(this->n);
-          ReadHDF5Dataset("vx", step_id, this->vx.data(), sizeof(float));
-
+          N = ReadHDF5Dataset("vx", step_id, this->vx.data(), sizeof(float));
+          if(N != this->n) std::cerr << __LINE__ << "  Error reading dataset" << std::endl;
+          
           this->vy.resize(this->n);
-          ReadHDF5Dataset("vy", step_id, this->vy.data(), sizeof(float));
-
+          N = ReadHDF5Dataset("vy", step_id, this->vy.data(), sizeof(float));
+          if(N != this->n) std::cerr << __LINE__ << "  Error reading dataset" << std::endl;
+          
           this->vz.resize(this->n);
-          ReadHDF5Dataset("vz", step_id, this->vz.data(), sizeof(float));
-
-          this->rho.resize(this->n);
-          ReadHDF5Dataset("rho", step_id, this->rho.data(), sizeof(float));
-
+          N = ReadHDF5Dataset("vz", step_id, this->vz.data(), sizeof(float));
+          if(N != this->n) std::cerr << __LINE__ << "  Error reading dataset" << std::endl;
+          
+          this->rho.resize(this->n); // using alpha since 'rho' does not exist currently
+          N = ReadHDF5Dataset("alpha", step_id, this->rho.data(), sizeof(float));
+          if(N != this->n) std::cerr << __LINE__ << "  Error reading dataset" << std::endl;
+          
           this->mass.resize(this->n);
-          ReadHDF5Dataset("m", step_id, this->mass.data(), sizeof(float));
-
+          N = ReadHDF5Dataset("m", step_id, this->mass.data(), sizeof(float));
+          if(N != this->n) std::cerr << __LINE__ << "  Error reading dataset" << std::endl;
+          
           this->temp.resize(this->n);
-          ReadHDF5Dataset("temp", step_id, this->temp.data(), sizeof(double));
-
+          N = ReadHDF5Dataset("temp", step_id, this->temp.data(), sizeof(double));
+          if(N != this->n) std::cerr << __LINE__ << "  Error reading dataset" << std::endl;
+          
           std::cout << __LINE__ << " H5Gclose(step_id) " << std::endl;
           H5Gclose(step_id);
           }

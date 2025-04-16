@@ -51,6 +51,12 @@ if(INSITU STREQUAL "Catalyst")
 
   set(exename dummysph_catalystV2)
   add_executable(${exename} ${C_SRCS})
+
+if(CAN_LOAD_H5Part)
+  target_compile_definitions(${exename} PRIVATE LOAD_H5Part=1)
+  target_include_directories(${exename} PRIVATE ${HDF5_DIR}/../include)
+  target_link_libraries(${exename} PRIVATE ${HDF5_LIBRARIES})
+endif()
 if(CAN_LOAD_TIPSY)
   target_compile_definitions(${exename} PRIVATE LOAD_TIPSY=1)
 endif()
@@ -102,7 +108,7 @@ endif()
   find_package(VTKm REQUIRED QUIET)
 
   set(exename dummysph_vtkm)
-  add_executable(${exename} ${C_SRCS}
+  add_executable(${exename} Driver.cu)
 if(CAN_LOAD_TIPSY)
   target_compile_definitions(${exename} PRIVATE LOAD_TIPSY=1)
 endif()
