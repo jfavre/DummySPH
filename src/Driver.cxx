@@ -30,7 +30,7 @@ Tested Mon  9 Dec 13:50:37 CET 2024
 // include the option parser from https://optionparser.sourceforge.net/
 #include "optionparser.h"
 
-enum  optionIndex { UNKNOWN, HELP, TIPSY, H5PART, NPARTICLES, RENDERING, COMPOSITING, THRESHOLDING, HISTSAMPLING, DUMPING, BINNING };
+enum  optionIndex { UNKNOWN, HELP, TIPSY, H5PART, NPARTICLES, RENDERING, COMPOSITING, THRESHOLDING, HISTSAMPLING, DUMPING, BINNING, CATALYST};
 const option::Descriptor usage[] =
 {
  {UNKNOWN, 0,"" , ""    ,option::Arg::None, "USAGE: dummysph_* [options]\n\n"
@@ -44,6 +44,7 @@ const option::Descriptor usage[] =
  {THRESHOLDING,    0,"thresholding" , "thresholding",option::Arg::Required, "  --thresholding <filename> \t(dumps a Conduit Blueprint HDF5 file)" },
  {HISTSAMPLING,    0,"histsampling" , "histsampling",option::Arg::Required, "  --histsampling <filename> \t(dumps a Conduit Blueprint HDF5 file)" },
  {DUMPING,    0,"dumping" , "dumping",option::Arg::Required, "  --dumping <filename> \t(dumps a Conduit Blueprint HDF5 or VTK file)" },
+ {CATALYST,    0,"catalyst" , "catalyst",option::Arg::Required, "  --catalyst <filename.py> \t(executes a ParaView Catalyst Python script)" },
  {BINNING,    0,"" , "binning",option::Arg::None, "  --binning \t(results are in ascent_session.yaml file)" },
  {UNKNOWN, 0,"" ,  ""   ,option::Arg::Required, "\nExamples:\n"
                                             "  dummysph_* --compositing filename\n"
@@ -125,12 +126,19 @@ int main(int argc, char *argv[])
         FileName = opt.arg;
         testname = "dumping";
         break;
+     case CATALYST:
+        FileName = opt.arg;
+        testname = "catalyst";
+        break;
      case UNKNOWN:
         std::cerr << "Unknown option\n"; option::printUsage(std::cerr, usage); exit(1);
         break;
     }
   }
 
+  for (int i = 0; i < parse.nonOptionsCount(); ++i)
+    std::cout << "Non-option #" << i << ": " << parse.nonOption(i) << "\n";
+    
 #ifdef SPH_DOUBLE
   ParticlesData<double> *sim = new(ParticlesData<double>);
 #else

@@ -84,7 +84,7 @@ namespace viz
 template<typename T>
 void init([[maybe_unused]] int argc,
                [[maybe_unused]] char** argv,
-               [[maybe_unused]]  sph::ParticlesData<T> *sim)
+               [[maybe_unused]] sph::ParticlesData<T> *sim)
 {
 #ifdef USE_CATALYST
   CatalystAdaptor::Initialize(argc, argv);
