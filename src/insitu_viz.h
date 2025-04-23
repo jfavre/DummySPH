@@ -13,6 +13,7 @@ typedef conduit_cpp::Node ConduitNode;
 
 #ifdef USE_ASCENT
 #include <ascent/ascent.hpp>
+#include <cuda_helpers.cpp>
 typedef conduit::Node ConduitNode;
 #endif
 
