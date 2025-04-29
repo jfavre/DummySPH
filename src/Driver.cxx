@@ -63,8 +63,8 @@ int main(int argc, char *argv[])
   int par_rank = 0;
   int par_size = 1;
   bool dummydata = true;
-  bool tipsydata = false;
-  bool h5partdata = false;
+//del  bool tipsydata = false;
+//del  bool h5partdata = false;
   const bool quiet = false;
   std::string TipsyFileName, H5PartFileName;
   std::string FileName, testname;
@@ -99,12 +99,12 @@ int main(int argc, char *argv[])
       case TIPSY:
         TipsyFileName = opt.arg;
         dummydata = false;
-        tipsydata = true;
+//del        tipsydata = true;
         break;
       case H5PART:
         H5PartFileName = opt.arg;
         dummydata = false;
-        h5partdata = true;
+//del        h5partdata = true;
         break;
      case HISTSAMPLING:
         FileName = opt.arg;
@@ -154,7 +154,7 @@ std::cerr << __LINE__ << "dummydata = " << dummydata << " H5PartFileName = " << 
     sim->AllocateGridMemory(Nparticles);
 
 #ifdef LOAD_TIPSY
-  if(tipsydata){
+//del  if(tipsydata){
     // only knows how to load a static Tipsy file at the moment.
     int n[3] = {1,0,0};
     frequency = Niterations = 1;
@@ -165,8 +165,9 @@ std::cerr << __LINE__ << "dummydata = " << dummydata << " H5PartFileName = " << 
     delete filein;
   }
 #endif
+
 #ifdef LOAD_H5Part
-  if(h5partdata){
+//del  if(h5partdata){
     // only knows how to load a single timestep at the moment
     frequency = Niterations = 1;
     sim->UseH5PartData(H5PartFileName);
