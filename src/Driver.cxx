@@ -153,6 +153,7 @@ std::cerr << __LINE__ << "dummydata = " << dummydata << " H5PartFileName = " << 
   if(dummydata)
     sim->AllocateGridMemory(Nparticles);
 
+#ifdef LOAD_TIPSY
   if(tipsydata){
     // only knows how to load a static Tipsy file at the moment.
     int n[3] = {1,0,0};
@@ -163,13 +164,14 @@ std::cerr << __LINE__ << "dummydata = " << dummydata << " H5PartFileName = " << 
     sim->UseTipsyData(filein->gas_ptr(), n[0]);
     delete filein;
   }
-
+#endif
+#ifdef LOAD_H5Part
   if(h5partdata){
     // only knows how to load a single timestep at the moment
     frequency = Niterations = 1;
     sim->UseH5PartData(H5PartFileName);
   }
-
+#endif
   timer.start();
   timer.step("pre-initialization");
   
