@@ -6,6 +6,10 @@
 #include <cuda_runtime.h>
 #endif
 
+#if defined (ASCENT_CUDA_ENABLED)
+#include <cuda_runtime.h>
+#endif
+
 /*
 code inspired from ascent/src/tests/ascent/t_ascent_gpu_data_source.cpp
 */

@@ -145,10 +145,11 @@ int main(int argc, char *argv[])
   ParticlesData<float> *sim = new(ParticlesData<float>);
 #endif
 std::cerr << __LINE__ << "dummydata = " << dummydata << " H5PartFileName = " << H5PartFileName << std::endl;
+
   if(dummydata)
     sim->AllocateGridMemory(Nparticles);
+
 #ifdef LOAD_TIPSY
-  else{
     // only knows how to load a static Tipsy file at the moment.
     int n[3] = {1,0,0};
     frequency = Niterations = 1;
@@ -157,14 +158,12 @@ std::cerr << __LINE__ << "dummydata = " << dummydata << " H5PartFileName = " << 
     filein->read_gas_piece(par_rank, par_size, n[0]);
     sim->UseTipsyData(filein->gas_ptr(), n[0]);
     delete filein;
-  }
 #endif
+
 #ifdef LOAD_H5Part
-  else{
     // only knows how to load a single timestep at the moment
     frequency = Niterations = 1;
     sim->UseH5PartData(H5PartFileName);
-  }
 #endif
   timer.start();
   timer.step("pre-initialization");
