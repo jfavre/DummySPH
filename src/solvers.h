@@ -28,12 +28,12 @@ static int ReadHDF5Dataset(const char *name, const hid_t mesh_id, void *data, in
     H5Sget_simple_extent_dims(filespace, dimsf, NULL);
     H5Sclose(filespace);
   
-    if (size == 4 && H5Dread(dset_id, H5T_NATIVE_FLOAT, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT, data) < 0)
+    if (size == 4 && H5Dread(dset_id, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data) < 0)
       {
       std::cerr << "Error reading dataset " << name << std::endl;
       return -1;
       }
-    if (size == 8 && H5Dread(dset_id, H5T_NATIVE_DOUBLE, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT, data) < 0)
+    if (size == 8 && H5Dread(dset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, data) < 0)
       {
       std::cerr << "Error reading dataset " << name << std::endl;
       return -1;
@@ -73,10 +73,10 @@ class ParticlesData
     static constexpr int NbofScalarfields = sizeof(tipsySph)/sizeof(T);
 #else
     std::vector<T> mass;            // "mass"
-    std::vector<double> x, y, z;         // Positions
+    std::vector<T> x, y, z;         // Positions
     std::vector<T> vx, vy, vz;      // Velocities
     std::vector<T> rho;             // Density
-    std::vector<double> temp;            // Temperature
+    std::vector<T> temp;            // Temperature
 
     static constexpr int NbofScalarfields = 9;
 #endif
@@ -122,45 +122,48 @@ class ParticlesData
 // N.B. x,y,z,temp are doubles, the others are float
 // thus, in Driver.cxx you must use   ParticlesData<float> *sim = new(ParticlesData<float>);
           std::cout << __LINE__ << " :found valid HDF5 Step#0 " << std::endl;
-          std::cout << "Allocating 9 std::vectors of scalar fields"<<std::endl;
+          std::cout << "Allocating 9 std::vectors of scalar fields of size " << sizeof(T) << " bytes" << std::endl;
 
           this->x.resize(this->n);
-          N = ReadHDF5Dataset("x", step_id, this->x.data(), sizeof(double));
+          N = ReadHDF5Dataset("x", step_id, this->x.data(), sizeof(T));
           if(N != this->n) std::cerr << __LINE__ << "  Error reading dataset" << std::endl;
           
           this->y.resize(this->n);
-          N = ReadHDF5Dataset("y", step_id, this->y.data(), sizeof(double));
+          N = ReadHDF5Dataset("y", step_id, this->y.data(), sizeof(T));
           if(N != this->n) std::cerr << __LINE__ << "  Error reading dataset" << std::endl;
           
           this->z.resize(this->n);
-          N = ReadHDF5Dataset("z", step_id, this->z.data(), sizeof(double));
+          N = ReadHDF5Dataset("z", step_id, this->z.data(), sizeof(T));
           if(N != this->n) std::cerr << __LINE__ << "  Error reading dataset" << std::endl;
           
           this->vx.resize(this->n);
-          N = ReadHDF5Dataset("vx", step_id, this->vx.data(), sizeof(float));
+          N = ReadHDF5Dataset("vx", step_id, this->vx.data(), sizeof(T));
           if(N != this->n) std::cerr << __LINE__ << "  Error reading dataset" << std::endl;
           
           this->vy.resize(this->n);
-          N = ReadHDF5Dataset("vy", step_id, this->vy.data(), sizeof(float));
+          N = ReadHDF5Dataset("vy", step_id, this->vy.data(), sizeof(T));
           if(N != this->n) std::cerr << __LINE__ << "  Error reading dataset" << std::endl;
           
           this->vz.resize(this->n);
-          N = ReadHDF5Dataset("vz", step_id, this->vz.data(), sizeof(float));
+          N = ReadHDF5Dataset("vz", step_id, this->vz.data(), sizeof(T));
           if(N != this->n) std::cerr << __LINE__ << "  Error reading dataset" << std::endl;
           
           this->rho.resize(this->n); // using alpha since 'rho' does not exist currently
-          N = ReadHDF5Dataset("alpha", step_id, this->rho.data(), sizeof(float));
+          N = ReadHDF5Dataset("rho", step_id, this->rho.data(), sizeof(T));
           if(N != this->n) std::cerr << __LINE__ << "  Error reading dataset" << std::endl;
+          auto minIt = std::min_element(this->rho.begin(), this->rho.end());
+          auto maxIt = std::max_element(this->rho.begin(), this->rho.end());
+          std::cout << *minIt << " < rho < " << *maxIt << std::endl;
           
           this->mass.resize(this->n);
-          N = ReadHDF5Dataset("m", step_id, this->mass.data(), sizeof(float));
+          N = ReadHDF5Dataset("m", step_id, this->mass.data(), sizeof(T));
           if(N != this->n) std::cerr << __LINE__ << "  Error reading dataset" << std::endl;
           
           this->temp.resize(this->n);
-          N = ReadHDF5Dataset("temp", step_id, this->temp.data(), sizeof(double));
+          N = ReadHDF5Dataset("temp", step_id, this->temp.data(), sizeof(T));
           if(N != this->n) std::cerr << __LINE__ << "  Error reading dataset" << std::endl;
           
-          std::cout << __LINE__ << " H5Gclose(step_id) " << std::endl;
+          //std::cout << __LINE__ << " H5Gclose(step_id) " << std::endl;
           H5Gclose(step_id);
           }
         else
@@ -168,10 +171,10 @@ class ParticlesData
           std::cerr << "cannot open /Step#0 " << std::endl;
           exit(-1);
           }
-        std::cout << __LINE__ << " H5Gclose(root_id) " << std::endl;
+        //std::cout << __LINE__ << " H5Gclose(root_id) " << std::endl;
         H5Gclose(root_id);
         }
-        std::cout << __LINE__ << " H5Fclose(file_id) " << std::endl;
+        //std::cout << __LINE__ << " H5Fclose(file_id) " << std::endl;
         H5Fclose(file_id);
       }
     else
