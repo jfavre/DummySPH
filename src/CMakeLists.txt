@@ -37,6 +37,18 @@ option(CAN_LOAD_H5Part "Use H5Part data instead of dummy data")
 option(CAN_DATADUMP    "Use relay to write output file")
 option(SPH_DOUBLE      "Use double instead of float" ON)
 
+if(CAN_LOAD_TIPSY AND CAN_LOAD_H5Part)
+    message(FATAL_ERROR "CAN_LOAD_TIPSY=${CAN_LOAD_TIPSY} and CAN_LOAD_H5Part=${CAN_LOAD_H5Part} cannot both be turned ON")
+endif()
+
+if(STRIDED_SCALARS AND CAN_LOAD_H5Part)
+    message(FATAL_ERROR "STRIDED_SCALARS=${STRIDED_SCALARS} (AOS) and CAN_LOAD_H5Part=${CAN_LOAD_H5Part} is not supported")
+endif()
+
+if(NOT STRIDED_SCALARS AND CAN_LOAD_TIPSY)
+    message(FATAL_ERROR "STRIDED_SCALARS=${STRIDED_SCALARS} (SOA) and CAN_LOAD_TIPSY=${CAN_LOAD_TIPSY} is not supported"
+endif()
+
 if(CAN_LOAD_H5Part)
 find_package(HDF5 REQUIRED)
 endif()
@@ -108,7 +120,8 @@ endif()
   find_package(VTKm REQUIRED QUIET)
 
   set(exename dummysph_vtkm)
-  add_executable(${exename} Driver.cxx)
+  # add_executable(${exename} Driver.cxx)
+  add_executable(${exename} Driver.cu)
 if(CAN_LOAD_TIPSY)
   target_compile_definitions(${exename} PRIVATE LOAD_TIPSY=1)
 endif()
