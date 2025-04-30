@@ -295,17 +295,22 @@ void Execute([[maybe_unused]]int it, [[maybe_unused]]int frequency, sph::Particl
     else if (!testname.compare("rendering"))
       {
       ConduitNode scenes;
-      scenes["s1/image_prefix"] = FileName + "_%04d";
       scenes["s1/plots/p1/type"] = "pseudocolor";
       scenes["s1/plots/p1/field"] = "rho";
-
+      scenes["s1/plots/p1/color_table/name"] = "viridis";
+      scenes["s1/renders/r1/color_bar_position"].set({-0.9,0.9,0.8,0.85});
+      scenes["s1/renders/r1/camera/azimuth"] = 30.0;
+      scenes["s1/renders/r1/camera/elevation"] = 30.0;
+      scenes["s1/renders/r1/image_prefix"] = FileName + "_%04d"; 
+      scenes["s1/renders/r1/bg_color"].set({1.,1.,1.});
+      scenes["s1/renders/r1/fg_color"].set({0.,0.,0.});
       ConduitNode &add_scene = trigger_actions.append();
       add_scene["action"] = "add_scenes";
       add_scene["scenes"] = scenes;
       }
     else if (!testname.compare("binning"))
       {
-      // in this particular case, we use Filedname to hold the variable name, e.g. rho
+      // in this particular case, we use FileName to hold the variable name, e.g. rho
       ConduitNode queries;
       queries["q1/params/expression"] = "min(field('" + FileName + "'))";
       queries["q1/params/name"] = "min_" + FileName;
