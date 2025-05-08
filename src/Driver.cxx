@@ -36,20 +36,28 @@ const option::Descriptor usage[] =
  {UNKNOWN, 0,"" , ""    ,option::Arg::None, "USAGE: dummysph_* [options]\n\n"
                                             "Options:" },
  {HELP,    0,"" , "help",option::Arg::None, "  --help  \tPrint usage and exit." },
+ #ifdef LOAD_TIPSY
  {TIPSY,    0,"tipsy" , "tipsy",option::Arg::Required, "  --tipsy <filename> \t(reads a PKDGRAV3 dump)" },
+ #endif
+ #ifdef LOAD_H5Part
  {H5PART,    0,"h5part" , "h5part",option::Arg::Required, "  --h5part <filename> \t(reads an SPH-EXA dump)" },
+ #endif
  {NPARTICLES,    0,"n", "n",option::Arg::Numeric, "  --n <num> \tNumber of particles" },
+ #ifdef USE_ASCENT
  {RENDERING,    0,"rendering" , "rendering",option::Arg::Required, "  --rendering  <filename> \t(makes a PNG file)" },
  {COMPOSITING,    0,"compositing" , "compositing",option::Arg::Required, "  --compositing <filename> \t(dumps a Conduit Blueprint HDF5 file)" },
  {THRESHOLDING,    0,"thresholding" , "thresholding",option::Arg::Required, "  --thresholding <filename> \t(dumps a Conduit Blueprint HDF5 file)" },
  {HISTSAMPLING,    0,"histsampling" , "histsampling",option::Arg::Required, "  --histsampling <filename> \t(dumps a Conduit Blueprint HDF5 file)" },
  {DUMPING,    0,"dumping" , "dumping",option::Arg::Required, "  --dumping <filename> \t(dumps a Conduit Blueprint HDF5 or VTK file)" },
+  {BINNING,    0,"" , "binning",option::Arg::None, "  --binning \t(results are in ascent_session.yaml file)" },
+#endif
+#ifdef USE_CATALYST
  {CATALYST,    0,"catalyst" , "catalyst",option::Arg::Required, "  --catalyst <filename.py> \t(executes a ParaView Catalyst Python script)" },
- {BINNING,    0,"" , "binning",option::Arg::None, "  --binning \t(results are in ascent_session.yaml file)" },
+#endif
  {UNKNOWN, 0,"" ,  ""   ,option::Arg::Required, "\nExamples:\n"
                                             "  dummysph_* --compositing filename\n"
                                             "  dummysph_* --n 100 --rendering filename\n"
-                                            "  dummysph_* --tipsy hr8799_bol_bd1.017300 --histsampling blueprintHS\n"
+                                            "  dummysph_* --tipsy hr8799_bol_bd1.017300\n"
                                             },
  {0,0,0,0,0,0}
 };
@@ -144,7 +152,6 @@ int main(int argc, char *argv[])
 #else
   ParticlesData<float> *sim = new(ParticlesData<float>);
 #endif
-std::cerr << __LINE__ << "dummydata = " << dummydata << " H5PartFileName = " << H5PartFileName << std::endl;
 
   if(dummydata)
     sim->AllocateGridMemory(Nparticles);

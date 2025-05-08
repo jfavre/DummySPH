@@ -245,16 +245,16 @@ void Execute([[maybe_unused]]int it, [[maybe_unused]]int frequency, sph::Particl
       pipelines["p1/f1/params/box/max/y"] = 20.0;
       pipelines["p1/f1/params/box/max/z"] = 20.0;
 
+      ConduitNode &add_pip = trigger_actions.append();
+      add_pip["action"] = "add_pipelines";
+      add_pip["pipelines"] = pipelines;
+
       ConduitNode extracts;
       extracts["e1/type"]  = "relay";
       extracts["e1/pipeline"] = "p1";
       extracts["e1/params/path"] = FileName.c_str();
       extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
       extracts["e1/params/fields"].append() = "rho";
-
-      ConduitNode &add_pip = trigger_actions.append();
-      add_pip["action"] = "add_pipelines";
-      add_pip["pipelines"] = pipelines;
 
       ConduitNode &add_ext= trigger_actions.append();
       add_ext["action"] = "add_extracts";
