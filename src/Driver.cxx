@@ -155,7 +155,8 @@ int main(int argc, char *argv[])
 
   if(dummydata)
     sim->AllocateGridMemory(Nparticles);
-
+  else
+    {
 #ifdef LOAD_TIPSY
     // only knows how to load a static Tipsy file at the moment.
     int n[3] = {1,0,0};
@@ -172,6 +173,7 @@ int main(int argc, char *argv[])
     frequency = Niterations = 1;
     sim->UseH5PartData(H5PartFileName);
 #endif
+    }
   timer.start();
   timer.step("pre-initialization");
   
