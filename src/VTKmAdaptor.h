@@ -21,9 +21,6 @@
 #include <vtkm/filter/field_transform/LogValues.h>
 #include <vtkm/filter/field_transform/CompositeVectors.h>
 #include <vtkm/rendering/MapperPoint.h>
-#include <vtkm/rendering/MapperRayTracer.h>
-#include <vtkm/rendering/MapperWireframer.h>
-#include <vtkm/rendering/MapperGlyphScalar.h>
 #include <vtkm/filter/resampling/HistSampling.h>
 #include <vtkm/filter/geometry_refinement/ConvertToPointCloud.h>
 #include <vtkm/filter/entity_extraction/ThresholdPoints.h>
@@ -348,7 +345,7 @@ void Execute_Rendering(const std::string &filename)
 
   mapper.SetUsePoints();
   // use radius = 0.05 for the small Tipsy example
-  mapper.SetRadius(0.05f);
+  mapper.SetRadius(0.005f);
   mapper.UseVariableRadius(false);
   mapper.SetRadiusDelta(0.05f);
 

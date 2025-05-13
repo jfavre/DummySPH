@@ -77,22 +77,23 @@ void addStridedCoordinates(ConduitNode& mesh,
 
 #include "timer.hpp"
 
-
-
 namespace viz
 {
 
 template<typename T>
 void init([[maybe_unused]] int argc,
                [[maybe_unused]] char** argv,
-               [[maybe_unused]] sph::ParticlesData<T> *sim)
+               [[maybe_unused]] sph::ParticlesData<T> *sim,
+               [[maybe_unused]] int frequency,
+             const std::string &testname, const std::string &FileName
+               )
 {
 #ifdef USE_CATALYST
   CatalystAdaptor::Initialize(argc, argv);
   std::cout << "CatalystInitialize\n";
 #endif
 #ifdef USE_ASCENT
-  AscentAdaptor::Initialize(sim);
+  AscentAdaptor::Initialize(sim, frequency, testname, FileName);
   std::cout << "AscentInitialize\n";
 #endif
 #ifdef USE_VTKM
@@ -111,7 +112,7 @@ void execute([[maybe_unused]] sph::ParticlesData<T> *sim,
   CatalystAdaptor::Execute(sim);
 #endif
 #ifdef USE_ASCENT
-  AscentAdaptor::Execute(iteration, frequency, sim, testname, FileName);
+  AscentAdaptor::Execute(iteration);
 #endif
 #ifdef USE_VTKM
   VTKmAdaptor::Execute(iteration, frequency, sim->par_rank, testname, FileName);

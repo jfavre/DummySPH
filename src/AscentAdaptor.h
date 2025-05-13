@@ -30,7 +30,10 @@ namespace AscentAdaptor
   ConduitNode  actions;
 
 template<typename T>
-void Initialize(sph::ParticlesData<T> *sim)
+void Initialize(sph::ParticlesData<T> *sim,
+                int frequency,
+                const string &testname,
+                const string &FileName)
 {
   ConduitNode n;
   ascent::about(n);
@@ -41,7 +44,7 @@ void Initialize(sph::ParticlesData<T> *sim)
     return;
   }
 
-  string output_path = "datasets";
+  string output_path = "datasets/";
   ASCENT_INFO("Creating output folder: " + output_path);
   if(!conduit::utils::is_directory(output_path))
   {
@@ -61,7 +64,6 @@ void Initialize(sph::ParticlesData<T> *sim)
   mesh["state/cycle"].set_external(&sim->iteration);
   mesh["state/time"].set_external(&sim->time);
   mesh["state/domain_id"].set_external(&sim->par_rank);
-  conduit::Node verify_info;
 
   std::cout << "time: " << sim->iteration*0.1 << " cycle: " << sim->iteration << std::endl;
 
@@ -156,7 +158,7 @@ void Initialize(sph::ParticlesData<T> *sim)
     device_move(mesh["fields/z/values"], sim->n*sizeof(T));
 #endif
 #endif
-
+  conduit::Node verify_info;
   if(!conduit::blueprint::mesh::verify(mesh,verify_info))
   {
     CONDUIT_INFO("blueprint verify failed!" + verify_info.to_json());
@@ -166,43 +168,22 @@ void Initialize(sph::ParticlesData<T> *sim)
   else
     std::cout << "Conduit Blueprint check found contiguous coordinates" << std::endl;
   //mesh.print();
-}
 
-template<typename T>
-void Execute([[maybe_unused]]int it, [[maybe_unused]]int frequency, sph::ParticlesData<T> *sim, const string &testname, const string &FileName)
-{
   string trigger_file = conduit::utils::join_file_path("./","simple_trigger_actions.yaml");
   conduit::utils::remove_path_if_exists(trigger_file);
-  
-#if defined (ASCENT_CUDA_ENABLED)
-#ifdef STRIDED_SCALARS
-    // Future work
-#else
-    // update "rho" and "temp" on device
-    copy_from_host_to_device(mesh["fields/rho/values"].data_ptr(),
-                             sim->rho.data(), sim->n*sizeof(T));
-    copy_from_host_to_device(mesh["fields/Temperature/values"].data_ptr(),
-                             sim->temp.data(), sim->n*sizeof(T));
-    copy_from_host_to_device(mesh["fields/vx/values"].data_ptr(),
-                             sim->vx.data(), sim->n*sizeof(T));
-    copy_from_host_to_device(mesh["fields/vy/values"].data_ptr(),
-                             sim->vy.data(), sim->n*sizeof(T));
-    copy_from_host_to_device(mesh["fields/vz/values"].data_ptr(),
-                             sim->vz.data(), sim->n*sizeof(T));
-#endif
-#endif
-    ConduitNode &add_triggers = actions.append();
-    add_triggers["action"] = "add_triggers";
-    ConduitNode &triggers = add_triggers["triggers"];
-    triggers["t1/params/condition"] = "cycle() % 1 == 0";
-    triggers["t1/params/actions_file"] = trigger_file;
+
+  ConduitNode &add_triggers = actions.append();
+  add_triggers["action"] = "add_triggers";
+  ConduitNode &triggers = add_triggers["triggers"];
+  triggers["t1/params/condition"] = "cycle() % " + std::to_string(frequency) + " == 0";
+  triggers["t1/params/actions_file"] = "simple_trigger_actions.yaml";
 
     ConduitNode trigger_actions;
     if (!testname.compare("dumping"))
       {
       ConduitNode extracts;
       extracts["e1/type"]  = "relay";
-      extracts["e1/params/path"] = FileName.c_str();
+      extracts["e1/params/path"] = output_path + FileName.c_str();
       extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
       extracts["e1/params/fields"].append() = "rho";
 
@@ -221,7 +202,7 @@ void Execute([[maybe_unused]]int it, [[maybe_unused]]int frequency, sph::Particl
       ConduitNode extracts;
       extracts["e1/type"]  = "relay";
       extracts["e1/pipeline"] = "p1";
-      extracts["e1/params/path"] = FileName.c_str();
+      extracts["e1/params/path"] = output_path + FileName.c_str();
       extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
       extracts["e1/params/fields"].append() = "rho";
 
@@ -252,7 +233,7 @@ void Execute([[maybe_unused]]int it, [[maybe_unused]]int frequency, sph::Particl
       ConduitNode extracts;
       extracts["e1/type"]  = "relay";
       extracts["e1/pipeline"] = "p1";
-      extracts["e1/params/path"] = FileName.c_str();
+      extracts["e1/params/path"] = output_path + FileName.c_str();
       extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
       extracts["e1/params/fields"].append() = "rho";
 
@@ -279,7 +260,7 @@ void Execute([[maybe_unused]]int it, [[maybe_unused]]int frequency, sph::Particl
       ConduitNode extracts;
       extracts["e1/type"]  = "relay";
       extracts["e1/pipeline"] = "p1";
-      extracts["e1/params/path"] = FileName.c_str();
+      extracts["e1/params/path"] = output_path + FileName.c_str();
       extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
       extracts["e1/params/fields"].append() = "rho";
       extracts["e1/params/fields"].append() = "velocity_magnitude";
@@ -301,7 +282,7 @@ void Execute([[maybe_unused]]int it, [[maybe_unused]]int frequency, sph::Particl
       scenes["s1/renders/r1/color_bar_position"].set({-0.9,0.9,0.8,0.85});
       scenes["s1/renders/r1/camera/azimuth"] = 30.0;
       scenes["s1/renders/r1/camera/elevation"] = 30.0;
-      scenes["s1/renders/r1/image_prefix"] = FileName + "_%04d"; 
+      scenes["s1/renders/r1/image_prefix"] = output_path + FileName + "_%04d"; 
       scenes["s1/renders/r1/bg_color"].set({1.,1.,1.});
       scenes["s1/renders/r1/fg_color"].set({0.,0.,0.});
       ConduitNode &add_scene = trigger_actions.append();
@@ -325,8 +306,29 @@ void Execute([[maybe_unused]]int it, [[maybe_unused]]int frequency, sph::Particl
     trigger_actions.save(trigger_file);
 
     //std::cout << trigger_actions.to_yaml() << std::endl;
-
     //std::cout << actions.to_yaml() << std::endl;
+}
+
+void Execute([[maybe_unused]]int it)
+{
+#if defined (ASCENT_CUDA_ENABLED)
+#ifdef STRIDED_SCALARS
+    // Future work
+#else
+    // update "rho" and "temp" on device
+    copy_from_host_to_device(mesh["fields/rho/values"].data_ptr(),
+                             sim->rho.data(), sim->n*sizeof(T));
+    copy_from_host_to_device(mesh["fields/Temperature/values"].data_ptr(),
+                             sim->temp.data(), sim->n*sizeof(T));
+    copy_from_host_to_device(mesh["fields/vx/values"].data_ptr(),
+                             sim->vx.data(), sim->n*sizeof(T));
+    copy_from_host_to_device(mesh["fields/vy/values"].data_ptr(),
+                             sim->vy.data(), sim->n*sizeof(T));
+    copy_from_host_to_device(mesh["fields/vz/values"].data_ptr(),
+                             sim->vz.data(), sim->n*sizeof(T));
+#endif
+#endif
+
     ascent.publish(mesh);
     ascent.execute(actions);
 }

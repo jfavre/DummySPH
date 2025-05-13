@@ -43,7 +43,7 @@ const option::Descriptor usage[] =
  {H5PART,          0,"h5part" , "h5part",option::Arg::Required, "  --h5part <filename> \t(reads an SPH-EXA dump)" },
  #endif
  {NPARTICLES,      0,"n", "n",option::Arg::Numeric, "  --n <num> \tNumber of particles" },
- #ifdef USE_ASCENT
+ #if defined(USE_ASCENT) || defined(USE_VTKM)
  {RENDERING,       0,"rendering" , "rendering",option::Arg::Required, "  --rendering  <filename> \t(makes a PNG file)" },
  {COMPOSITING,     0,"compositing" , "compositing",option::Arg::Required, "  --compositing <filename> \t(dumps a Conduit Blueprint HDF5 file)" },
  {THRESHOLDING,    0,"thresholding" , "thresholding",option::Arg::Required, "  --thresholding <filename> \t(dumps a Conduit Blueprint HDF5 file)" },
@@ -66,8 +66,8 @@ using namespace sph;
 
 int main(int argc, char *argv[])
 {
-  int it = 0, Niterations = 1, Nparticles = 100; // actually Nparticles^3
-  int frequency = 1;
+  int it = 0, Niterations = 20, Nparticles = 30; // actually Nparticles^3
+  int frequency = 5;
   int par_rank = 0;
   int par_size = 1;
   bool dummydata = true;
@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
   timer.start();
   timer.step("pre-initialization");
   
-  viz::init(argc, argv, sim);
+  viz::init(argc, argv, sim, frequency, testname, FileName);
   
   timer.step("post-initialization");
   while (it < Niterations)
