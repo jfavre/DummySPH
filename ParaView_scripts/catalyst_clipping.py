@@ -26,9 +26,9 @@ bounds = reader.GetDataInformation().GetBounds()
 clip1 = Clip(registrationName='Clip1', Input=reader)
 clip1.ClipType = 'Plane'
 clip1.ClipType.Normal = [0.0, 0.0, 1.0]
-clip1.ClipType.Origin = [(bounds[1]-bounds[0])*.5,
-                         (bounds[3]-bounds[2])*.5,
-                         (bounds[5]-bounds[4])*.5]
+clip1.ClipType.Origin = [(bounds[1]+bounds[0])*.5,
+                         (bounds[3]+bounds[2])*.5,
+                         (bounds[5]+bounds[4])*.5]
 
 varname = "velocity"
 readerDisplay = Show(clip1, renderView1, 'GeometryRepresentation')
