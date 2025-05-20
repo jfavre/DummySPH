@@ -49,6 +49,10 @@ if(NOT STRIDED_SCALARS AND CAN_LOAD_TIPSY)
     message(FATAL_ERROR "STRIDED_SCALARS=${STRIDED_SCALARS} (SOA) and CAN_LOAD_TIPSY=${CAN_LOAD_TIPSY} is not supported")
 endif()
 
+if(SPH_DOUBLE AND CAN_LOAD_TIPSY)
+    message(FATAL_ERROR "SPH_DOUBLE=${SPH_DOUBLE} and CAN_LOAD_TIPSY=${CAN_LOAD_TIPSY} cannot both be turned ON")
+endif()
+
 if(CAN_LOAD_H5Part)
 find_package(HDF5 REQUIRED)
 endif()
