@@ -107,7 +107,11 @@ void Initialize(int argc, char* argv[], sph::ParticlesData<T> *sim)
                                              sim->n * sim->NbofScalarfields,
                                              vtkm::CopyFlag::Off);
   sim->scalarsAOS.clear(); // just to make sure we're going to the device
+#ifdef SPH_DOUBLE
+  sim->scalarsAOS = std::vector<sph::ParticlesData<double>::tipsySph>();
+#else
   sim->scalarsAOS = std::vector<sph::ParticlesData<float>::tipsySph>();
+#endif
 #else
   std::cout << "using host-allocated data\n";
 // base of the AOS struct{}. every field will be offset from that base
