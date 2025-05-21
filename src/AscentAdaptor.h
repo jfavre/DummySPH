@@ -309,7 +309,8 @@ void Initialize(sph::ParticlesData<T> *sim,
     //std::cout << actions.to_yaml() << std::endl;
 }
 
-void Execute([[maybe_unused]]int it)
+template<typename T>
+void Execute([[maybe_unused]]int it, sph::ParticlesData<T> *sim)
 {
 #if defined (ASCENT_CUDA_ENABLED)
 #ifdef STRIDED_SCALARS

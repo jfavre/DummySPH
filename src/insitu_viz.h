@@ -112,7 +112,7 @@ void execute([[maybe_unused]] sph::ParticlesData<T> *sim,
   CatalystAdaptor::Execute(sim);
 #endif
 #ifdef USE_ASCENT
-  AscentAdaptor::Execute(iteration);
+  AscentAdaptor::Execute(iteration, sim);
 #endif
 #ifdef USE_VTKM
   VTKmAdaptor::Execute(iteration, frequency, sim->par_rank, testname, FileName);
