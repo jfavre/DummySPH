@@ -216,15 +216,22 @@ void Initialize(sph::ParticlesData<T> *sim,
       }
     else if (!testname.compare("thresholding"))
       {
+      ConduitNode queries;
+      queries["q1/params/expression"] = "min(field('rho')).value";
+      queries["q1/params/name"] = "min_rho";
+      queries["q2/params/expression"] = "max(field('rho')).value";
+      queries["q2/params/name"] = "max_rho";
+
+      ConduitNode &add_query = trigger_actions.append();
+      add_query["action"] = "add_queries";
+      add_query["queries"] = queries;
+      
       ConduitNode pipelines;
-      pipelines["p1/f1/type"]  = "clip";
-      pipelines["p1/f1/params/invert"] = "true";
-      pipelines["p1/f1/params/box/min/x"] = -20.0;
-      pipelines["p1/f1/params/box/min/y"] = -20.0;
-      pipelines["p1/f1/params/box/min/z"] = -20.0;
-      pipelines["p1/f1/params/box/max/x"] = 20.0;
-      pipelines["p1/f1/params/box/max/y"] = 20.0;
-      pipelines["p1/f1/params/box/max/z"] = 20.0;
+ 
+      pipelines["p1/f1/type"]  = "threshold";
+      pipelines["p1/f1/params/field"] = "rho";
+      pipelines["p1/f1/params/min_value"] = "min_rho + 0.25 * (max_rho - min_rho)";
+      pipelines["p1/f1/params/max_value"] = "max_rho - 0.25 * (max_rho - min_rho)";
 
       ConduitNode &add_pip = trigger_actions.append();
       add_pip["action"] = "add_pipelines";
