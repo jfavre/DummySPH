@@ -143,19 +143,21 @@ void Initialize(sph::ParticlesData<T> *sim,
     // Future work
 #else
 // device_move allocates and uses set external to provide data on the device
-    device_move(mesh["coordsets/coords/values/x"], sim->n*sizeof(T));
-    device_move(mesh["coordsets/coords/values/y"], sim->n*sizeof(T));
-    device_move(mesh["coordsets/coords/values/z"], sim->n*sizeof(T));
-    device_move(mesh["topologies/mesh/elements/connectivity"], sim->n);
-    device_move(mesh["fields/rho/values"], sim->n*sizeof(T));
-    device_move(mesh["fields/Temperature/values"], sim->n*sizeof(T));
-    device_move(mesh["fields/mass/values"], sim->n*sizeof(T));
-    device_move(mesh["fields/vx/values"], sim->n*sizeof(T));
-    device_move(mesh["fields/vy/values"], sim->n*sizeof(T));
-    device_move(mesh["fields/vz/values"], sim->n*sizeof(T));
-    device_move(mesh["fields/x/values"], sim->n*sizeof(T));
-    device_move(mesh["fields/y/values"], sim->n*sizeof(T));
-    device_move(mesh["fields/z/values"], sim->n*sizeof(T));
+    int data_nbytes = sim->n * sizeof(T);
+    
+  device_move(mesh["coordsets/coords/values/x"],             data_nbytes);
+  device_move(mesh["coordsets/coords/values/y"],             data_nbytes);
+  device_move(mesh["coordsets/coords/values/z"],             data_nbytes);
+  device_move(mesh["topologies/mesh/elements/connectivity"], sim->n*sizeof(conduit_int32));
+  device_move(mesh["fields/rho/values"],                     data_nbytes);
+  device_move(mesh["fields/Temperature/values"],             data_nbytes);
+  device_move(mesh["fields/mass/values"],                    data_nbytes);
+  device_move(mesh["fields/vx/values"],                      data_nbytes);
+  device_move(mesh["fields/vy/values"],                      data_nbytes);
+  device_move(mesh["fields/vz/values"],                      data_nbytes);
+  device_move(mesh["fields/x/values"],                       data_nbytes);
+  device_move(mesh["fields/y/values"],                       data_nbytes);
+  device_move(mesh["fields/z/values"],                       data_nbytes);
 #endif
 #endif
   conduit::Node verify_info;

@@ -14,13 +14,22 @@
 code inspired from ascent/src/tests/ascent/t_ascent_gpu_data_source.cpp
 */
 
+static void cuda_check_status(cudaError_t status) {
+    if(status != cudaSuccess) {
+        std::cerr << "error: CUDA API call : "
+                  << cudaGetErrorString(status) << std::endl;
+        exit(1);
+    }
+}
+
 //-----------------------------------------------------------------------------
 void *
 device_alloc(int size)
 {
 #if defined (ASCENT_CUDA_ENABLED)
   void *buff;
-  cudaMalloc(&buff, size);
+  auto status = cudaMalloc(&buff, size);
+  cuda_check_status(status);
   return buff;
 #else
   return nullptr;
@@ -53,8 +62,9 @@ void
 copy_from_host_to_device(void *dest, void *src, int size)
 {
 #if defined (ASCENT_CUDA_ENABLED)
-  cudaMemcpy(dest, src, size, cudaMemcpyHostToDevice);
+  auto status = cudaMemcpy(dest, src, size, cudaMemcpyHostToDevice);
   //memcpy(dest,src,size);
+  cuda_check_status(status);
 #endif
 }
 

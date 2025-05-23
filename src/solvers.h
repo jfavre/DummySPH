@@ -182,7 +182,7 @@ class ParticlesData
       std::cerr << "cannot open valid HDF5 file " << H5PartFileName << std::endl;
       exit(1);
       }
-    std::cout << __LINE__ << " finished loading H5Part data " << std::endl;
+    //std::cout << __LINE__ << " finished loading H5Part data " << std::endl;
     return(0);
     };
 #endif
