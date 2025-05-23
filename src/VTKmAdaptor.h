@@ -266,6 +266,11 @@ void Execute(int it, int frequency, int rank, const std::string &testname, const
           << it << ".vtk";
       Execute_Dumping(fname.str());
       }
+    else if (!testname.compare("binning"))
+      {  
+      std::cout << "\n[VTKmAdaptor] --binning option detected but code not implemented. Exiting.\n" << std::endl;
+      std::exit(EXIT_SUCCESS);
+      }
     }
 }
 
