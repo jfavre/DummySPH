@@ -277,7 +277,7 @@ void Execute_CompositeVectors(const std::string &filename)
   compositor.SetActiveField(1, "vy");
   compositor.SetActiveField(2, "vz");
   compositor.SetOutputFieldName("vxvyvz");
-  compositor.SetFieldsToPass({ "vxvyvz", "velocity", "rho" });
+  compositor.SetFieldsToPass({ "rho" });
   auto compositorDataSet = compositor.Execute(dataSet);
 
 // writing to disk (optional, for debugging only)
@@ -326,7 +326,7 @@ void Execute_Rendering(const std::string &filename)
   using AssocType = vtkm::cont::Field::Association;
   vtkm::filter::resampling::HistSampling histsample;
   histsample.SetNumberOfBins(128);
-  histsample.SetSampleFraction(.2);
+  histsample.SetSampleFraction(.01);
   histsample.SetActiveField("rho", AssocType::Points);
   auto histsampleDataSet = histsample.Execute(dataSet);
 
