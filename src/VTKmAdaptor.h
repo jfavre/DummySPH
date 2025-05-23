@@ -10,7 +10,6 @@
 #include <vtkm/cont/ArrayCopy.h>
 #include <vtkm/cont/ArrayCopyDevice.h>
 #include <vtkm/cont/DataSetBuilderExplicit.h>
-#include <vtkm/cont/ArrayHandleExtractComponent.h>
 #include <vtkm/cont/ArrayHandleCompositeVector.h>
 #include <vtkm/cont/ArrayHandleStride.h>
 #include <vtkm/cont/ArrayHandleIndex.h>
@@ -283,10 +282,10 @@ void Execute_CompositeVectors(const std::string &filename)
 // writing to disk (optional, for debugging only)
   if(filename.c_str())
     {
-    vtkm::io::VTKDataSetWriter histsampleWriter(filename.c_str());
-    histsampleWriter.SetFileTypeToBinary();
+    vtkm::io::VTKDataSetWriter writer(filename.c_str());
+    writer.SetFileTypeToBinary();
 
-    histsampleWriter.WriteDataSet(compositorDataSet);
+    writer.WriteDataSet(compositorDataSet);
     }
 }
 
@@ -315,9 +314,9 @@ void Execute_HistSampling(const std::string &filename)
   if(filename.c_str())
     {
     std::cout << "writing histogram sampling output " << filename << std::endl;
-    vtkm::io::VTKDataSetWriter histsampleWriter(filename.c_str());
-    histsampleWriter.SetFileTypeToBinary();
-    histsampleWriter.WriteDataSet(topcDataSet);
+    vtkm::io::VTKDataSetWriter writer(filename.c_str());
+    writer.SetFileTypeToBinary();
+    writer.WriteDataSet(topcDataSet);
     }
 }
 
