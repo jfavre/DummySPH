@@ -4,15 +4,6 @@
 #include <cstring>
 #if defined (CAMP_HAVE_CUDA)
 #include <cuda_runtime.h>
-#endif
-
-#if defined (ASCENT_CUDA_ENABLED)
-#include <cuda_runtime.h>
-#endif
-
-/*
-code inspired from ascent/src/tests/ascent/t_ascent_gpu_data_source.cpp
-*/
 
 static void cuda_check_status(cudaError_t status) {
     if(status != cudaSuccess) {
@@ -21,6 +12,14 @@ static void cuda_check_status(cudaError_t status) {
         exit(1);
     }
 }
+#endif
+
+
+/*
+code inspired from ascent/src/tests/ascent/t_ascent_gpu_data_source.cpp
+*/
+
+
 
 //-----------------------------------------------------------------------------
 void *
