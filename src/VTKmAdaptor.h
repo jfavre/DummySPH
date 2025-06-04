@@ -41,11 +41,11 @@ given std::vector<T> x, y, z;         // Positions
 
 namespace VTKmAdaptor
 {
-  vtkm::rendering::CanvasRayTracer   canvas(1024,1024);
-  vtkm::rendering::Scene             scene;
-  vtkm::rendering::MapperPoint       mapper;
-  vtkm::cont::DataSet                dataSet;
-  vtkm::Bounds bounds;
+  vtkm::rendering::CanvasRayTracer canvas(1024,1024);
+  vtkm::rendering::Scene           scene;
+  vtkm::rendering::MapperPoint     mapper;
+  vtkm::cont::DataSet              dataSet;
+  vtkm::Bounds                     bounds;
 
 void Execute_CompositeVectors(const std::string &filename);
 void Execute_HistSampling(const std::string &filename);
@@ -59,7 +59,13 @@ T *
 device_alloc(int size, const T *data)
 {
   void *buff;
-  cudaMalloc(&buff, size * sizeof(T));
+  auto status = cudaMalloc(&buff, size * sizeof(T));
+  if(status != cudaSuccess)
+    {
+    std::cerr << "error: CUDA API call : "
+              << cudaGetErrorString(status) << std::endl;
+    exit(1);
+    }
   cudaMemcpy(buff, data, size * sizeof(T), cudaMemcpyHostToDevice);
   return static_cast<T*>(buff);
 }
@@ -105,8 +111,6 @@ void Initialize(int argc, char* argv[], sph::ParticlesData<T> *sim)
   auto AOS = vtkm::cont::make_ArrayHandle<T>(device_AOS,
                                              sim->n * sim->NbofScalarfields,
                                              vtkm::CopyFlag::Off);
-  sim->scalarsAOS.clear(); // just to make sure we're going to the device
-  sim->scalarsAOS = std::vector<sph::ParticlesData<float>::tipsySph>();
 #else
   std::cout << "using host-allocated data\n";
 // base of the AOS struct{}. every field will be offset from that base
