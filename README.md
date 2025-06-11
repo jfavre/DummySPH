@@ -37,7 +37,7 @@ cmake <GIT_SOURCE_DIR>
 #### Running the main application
 
 ```DummySPH``` can start by generating a set of very simple data particle points arranged
-in a cubic box of dimensions NxnxN, or by reading the output of the SPH applications which
+in a cubic box of dimensions NxNxN, or by reading the output of the SPH applications which
 motivated its creation, i.e. the SPH-EXA output in H5part format, or the PKDGRAV3 output in Tipsy format.
 The last two options are enabled at compile time.
 
