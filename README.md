@@ -51,4 +51,4 @@ The last two options are enabled at compile time.
 
 ## Paper references
 
-* Jean M. Favre, Jean-Guillaume Piccinali, Issues and challenges of deploying in-situ visualization for SPH codes, WOIV'25, 9th International Workshop on In Situ Visualization.
+* Jean M. Favre, Jean-Guillaume Piccinali, Issues and challenges of deploying in-situ visualization for SPH codes, [WOIV'25, 9th International Workshop on In Situ Visualization](https://woiv.gitlab.io/woiv25/).
