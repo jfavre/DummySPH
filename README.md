@@ -21,11 +21,14 @@ with different internal data organisation:
 ### in-situ visualization backends
 
 Three different backend in-situ visualization libraries are enabled via compile-time flags.
-* [Ascent] (https://ascent.readthedocs.io/en/latest/index.html)
-* [ParaView Catalyst] (https://kitware.github.io/paraview-catalyst/)
-* [VTK-m] (https://vtk-m.readthedocs.io/en/stable/index.html)
+* [Ascent](https://ascent.readthedocs.io/en/latest/index.html)
+* [ParaView Catalyst](https://kitware.github.io/paraview-catalyst/)
+* [VTK-m](https://vtk-m.readthedocs.io/en/stable/index.html)
 
 #### Compilation
+
+For proper compilation and installation of the in-situ backends, we refer the user
+to the respective web sites of [Ascent](https://ascent.readthedocs.io/en/latest/index.html), [ParaView Catalyst](https://kitware.github.io/paraview-catalyst/), and [VTK-m](https://vtk-m.readthedocs.io/en/stable/index.html). For proper CUDA support, Ascent and VTK-m should be compiled accordingly.
 
 Minimal CMake configuration:
 ```shell
