@@ -34,7 +34,7 @@ Minimal CMake configuration:
 ```shell
 mkdir build
 cd build
-cmake <GIT_SOURCE_DIR>
+cmake -S <GIT_SOURCE_DIR>/src
 ```
 
 #### Running the main application
