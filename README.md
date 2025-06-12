@@ -1,3 +1,7 @@
+<div align="left">
+ <img src="docs/_static/img/dummysph.jpg" width="150px">
+</div>
+
 # DummySPH
 
 DummySPH is a mini-app to test in situ visualization libraries for Smoothed Particle Hydrodynamics (SPH)
