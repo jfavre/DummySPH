@@ -75,6 +75,10 @@ void addStridedCoordinates(ConduitNode& mesh,
 #include "VTKmAdaptor.h"
 #endif
 
+#ifdef USE_VISKORES
+#include "ViskoresAdaptor.h"
+#endif
+
 #include "timer.hpp"
 
 namespace viz
@@ -100,6 +104,11 @@ void init([[maybe_unused]] int argc,
   VTKmAdaptor::Initialize(argc, argv, sim);
   std::cout << "VTK-mInitialize\n";
 #endif
+#ifdef USE_VISKORES
+  ViskoresAdaptor::Initialize(argc, argv, sim);
+  std::cout << "ViskoresInitialize\n";
+#endif
+
 }
 
 template<typename T>
@@ -117,6 +126,10 @@ void execute([[maybe_unused]] sph::ParticlesData<T> *sim,
 #ifdef USE_VTKM
   VTKmAdaptor::Execute(iteration, frequency, sim->par_rank, testname, FileName);
 #endif
+#ifdef USE_VISKORES
+  ViskoresAdaptor::Execute(iteration, frequency, sim->par_rank, testname, FileName);
+#endif
+
 }
 
 void finalize([[maybe_unused]] int &rank)
@@ -131,6 +144,10 @@ void finalize([[maybe_unused]] int &rank)
 #ifdef USE_VTKM
   std::cout << "VTK-mFinalize\n";
   VTKmAdaptor::Finalize(rank);
+#endif
+#ifdef USE_VISKORES
+  std::cout << "ViskoresFinalize\n";
+  ViskoresAdaptor::Finalize(rank);
 #endif
 }
 
