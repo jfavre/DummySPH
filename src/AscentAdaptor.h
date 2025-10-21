@@ -143,7 +143,7 @@ void Initialize(sph::ParticlesData<T> *sim,
     // Future work
 #else
 // device_move allocates and uses set external to provide data on the device
-    int data_nbytes = sim->n * sizeof(T);
+  int data_nbytes = sim->n * sizeof(T);
     
   device_move(mesh["coordsets/coords/values/x"],             data_nbytes);
   device_move(mesh["coordsets/coords/values/y"],             data_nbytes);
@@ -197,7 +197,7 @@ void Initialize(sph::ParticlesData<T> *sim,
       {
       ConduitNode pipelines;
       pipelines["p1/f1/type"]  = "histsampling";
-      pipelines["p1/f1/params/sample_rate"] = 0.05;
+      pipelines["p1/f1/params/sample_rate"] = 0.5;
       pipelines["p1/f1/params/bins"] = 64;
       pipelines["p1/f1/params/field"] = "rho";
 
@@ -312,6 +312,20 @@ void Initialize(sph::ParticlesData<T> *sim,
       add_query["queries"] = queries;
       std::cout << "See the output in datasets/ascent_session.yaml" << std::endl;
       }
+    else if (!testname.compare("occa"))
+      {
+      ConduitNode queries;
+      queries["q2/params/expression"] = "sqrt(field('x')*field('x') + field('y')*field('y') + field('z')*field('z'))";
+      queries["q2/params/name"] = "radius";
+
+      queries["q3/params/expression"] = "binning('', 'pdf', [axis('radius',num_bins=64), axis('rho', num_bins=64)])";
+      queries["q3/params/name"] = "pdf1";
+
+      ConduitNode &add_query = trigger_actions.append();
+      add_query["action"] = "add_queries";
+      add_query["queries"] = queries;
+      std::cout << "See the output in datasets/ascent_session.yaml" << std::endl;
+      }
     trigger_actions.save(trigger_file);
 
     //std::cout << trigger_actions.to_yaml() << std::endl;
@@ -325,7 +339,8 @@ void Execute([[maybe_unused]]int it, sph::ParticlesData<T> *sim)
 #ifdef STRIDED_SCALARS
     // Future work
 #else
-    // update "rho" and "temp" on device
+    // coordinates are constant, and so is "mass"
+    // update "rho", "temp" and "velocity components" on device
     copy_from_host_to_device(mesh["fields/rho/values"].data_ptr(),
                              sim->rho.data(), sim->n*sizeof(T));
     copy_from_host_to_device(mesh["fields/Temperature/values"].data_ptr(),

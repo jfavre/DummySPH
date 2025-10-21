@@ -30,7 +30,7 @@ Tested Mon  9 Dec 13:50:37 CET 2024
 // include the option parser from https://optionparser.sourceforge.net/
 #include "optionparser.h"
 
-enum  optionIndex { UNKNOWN, HELP, TIPSY, H5PART, NPARTICLES, RENDERING, COMPOSITING, THRESHOLDING, HISTSAMPLING, DUMPING, BINNING, CATALYST};
+enum  optionIndex { UNKNOWN, HELP, TIPSY, H5PART, NPARTICLES, RENDERING, COMPOSITING, THRESHOLDING, HISTSAMPLING, DUMPING, BINNING, CATALYST, OCCA};
 const option::Descriptor usage[] =
 {
  {UNKNOWN, 0,"" , ""    ,option::Arg::None, "USAGE: dummysph_* [options]\n\n"
@@ -50,6 +50,7 @@ const option::Descriptor usage[] =
  {HISTSAMPLING,    0,"histsampling" , "histsampling",option::Arg::Required, "  --histsampling <filename> \t(dumps a Conduit Blueprint HDF5 file)" },
  {DUMPING,         0,"dumping" , "dumping",option::Arg::Required, "  --dumping <filename> \t(dumps a Conduit Blueprint HDF5 or VTK file)" },
  {BINNING,         0,"binning" , "binning",option::Arg::Required, "  --binning <varname>\t(results are in ascent_session.yaml file)" },
+ {OCCA,         0,"occa" , "occa",option::Arg::None, "  --occa\t(parses the derived expression with OCCA. results are in ascent_session.yaml file)" },
 #endif
 #ifdef USE_CATALYST
  {CATALYST,    0,"catalyst" , "catalyst",option::Arg::Required, "  --catalyst <filename.py> \t(executes a ParaView Catalyst Python script)" },
@@ -137,6 +138,9 @@ int main(int argc, char *argv[])
      case CATALYST:
         FileName = opt.arg;
         testname = "catalyst";
+        break;
+     case OCCA:
+        testname = "occa";
         break;
      case UNKNOWN:
         std::cerr << "Unknown option\n"; option::printUsage(std::cerr, usage); exit(1);
