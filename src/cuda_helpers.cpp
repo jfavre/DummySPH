@@ -2,7 +2,7 @@
 #define _CUDA_HELPERS_INCLUDED_
 
 #include <cstring>
-#if defined (CAMP_HAVE_CUDA)
+#if defined (CAMP_HAVE_CUDA) || defined (ASCENT_CUDA_ENABLED)
 #include <cuda_runtime.h>
 
 static void cuda_check_status(cudaError_t status) {
