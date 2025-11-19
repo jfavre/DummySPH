@@ -107,10 +107,10 @@ elseif(INSITU STREQUAL "Ascent")
   # find_package(Ascent REQUIRED PATHS "/local/apps/ascent/install/lib/cmake/ascent")
   # find_package(Ascent REQUIRED PATHS "/capstor/scratch/cscs/piccinal/daint/jf/ascent/install/ascent-checkout")
   find_package(Ascent REQUIRED)
-  target_include_directories(${exename} PRIVATE ${ASCENT_INCLUDE_DIRS})
 
   set(exename dummysph_ascent)
   add_executable(${exename} ${C_SRCS})
+  target_include_directories(${exename} PRIVATE ${ASCENT_INCLUDE_DIRS})
 
 if(CAN_LOAD_H5Part)
   target_compile_definitions(${exename} PRIVATE LOAD_H5Part=1)
