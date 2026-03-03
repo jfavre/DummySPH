@@ -13,11 +13,13 @@ typedef conduit_cpp::Node ConduitNode;
 
 #ifdef USE_ASCENT
 #include <ascent/ascent.hpp>
-#include <cuda_helpers.cpp>
 typedef conduit::Node ConduitNode;
 #endif
 
 #if defined(USE_CATALYST) || defined(USE_ASCENT)
+
+#include <cuda_helpers.cpp>
+
 template<typename T>
 void addField(ConduitNode& mesh, const std::string& name, T* field, const size_t N)
 {
@@ -25,6 +27,17 @@ void addField(ConduitNode& mesh, const std::string& name, T* field, const size_t
     mesh["fields/" + name + "/topology"]    = "mesh";
     mesh["fields/" + name + "/values"].set_external(field, N);
     mesh["fields/" + name + "/volume_dependent"].set("false");
+}
+
+template<typename T>
+T* addField_gpu(ConduitNode& mesh, const std::string& name, T* field, const size_t N)
+{
+  int data_nbytes = N * sizeof(T);
+  void *device_ptr = device_alloc(data_nbytes);
+  copy_from_host_to_device(device_ptr, field, data_nbytes);
+  T* dev_ptr = static_cast<T*>(device_ptr);
+  addField(mesh, name, dev_ptr, N);
+  return dev_ptr;
 }
 
 template<typename T>

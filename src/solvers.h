@@ -16,8 +16,7 @@
 
 static int ReadHDF5Dataset(const char *name, const hid_t mesh_id, void *data, int size)
 {
-  hid_t dset_id, filespace, attr1;
-  herr_t  status;
+  hid_t dset_id, filespace;
   hsize_t dimsf[2]={0,0};
 
   dset_id = H5Dopen(mesh_id, name, H5P_DEFAULT);
@@ -101,7 +100,7 @@ class ParticlesData
     file_id = H5Fopen(H5PartFileName.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
     if(file_id != H5I_INVALID_HID)
       {
-      std::cout << __LINE__ << " :found valid HDF5 file " << H5PartFileName << std::endl;
+      //std::cout << __LINE__ << " :found valid HDF5 file " << H5PartFileName << std::endl;
       hid_t root_id = H5Gopen(file_id, "/", H5P_DEFAULT);
       if (root_id != H5I_INVALID_HID)
         {
@@ -121,7 +120,7 @@ class ParticlesData
           int N;
 // N.B. x,y,z,temp are doubles, the others are float
 // thus, in Driver.cxx you must use   ParticlesData<float> *sim = new(ParticlesData<float>);
-          std::cout << __LINE__ << " :found valid HDF5 Step#0 " << std::endl;
+          //std::cout << __LINE__ << " :found valid HDF5 Step#0 " << std::endl;
           std::cout << "Allocating 9 std::vectors of scalar fields of size " << sizeof(T) << " bytes" << std::endl;
 
           this->x.resize(this->n);
@@ -149,7 +148,7 @@ class ParticlesData
           if(N != this->n) std::cerr << __LINE__ << "  Error reading dataset" << std::endl;
           
           this->rho.resize(this->n); // using alpha since 'rho' does not exist currently
-          N = ReadHDF5Dataset("rho", step_id, this->rho.data(), sizeof(T));
+          N = ReadHDF5Dataset("alpha", step_id, this->rho.data(), sizeof(T));
           if(N != this->n) std::cerr << __LINE__ << "  Error reading dataset" << std::endl;
           auto minIt = std::min_element(this->rho.begin(), this->rho.end());
           auto maxIt = std::max_element(this->rho.begin(), this->rho.end());

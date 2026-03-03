@@ -38,9 +38,9 @@ void Initialize(sph::ParticlesData<T> *sim,
   ConduitNode n;
   ascent::about(n);
   // only run this test if ascent was built with vtkm support
-  if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+  if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
   {
-    ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+    ASCENT_INFO("Ascent viskores support disabled, skipping test");
     return;
   }
 
@@ -57,7 +57,7 @@ void Initialize(sph::ParticlesData<T> *sim,
   ascent_options["ascent_info"] = "verbose";
   ascent_options["exceptions"] = "forward";
 #ifdef CAMP_HAVE_CUDA
-  ascent_options["runtime/vtkm/backend"] = "cuda";
+  ascent_options["runtime/viskores/backend"] = "cuda";
 #endif
   ascent.open(ascent_options);
 
@@ -77,7 +77,7 @@ void Initialize(sph::ParticlesData<T> *sim,
   mesh["topologies/mesh/type"] = "unstructured";
   std::vector<conduit_int32> conn(sim->n);
   std::iota(conn.begin(), conn.end(), 0);
-  mesh["topologies/mesh/elements/connectivity"].set(conn);
+  mesh["topologies/mesh/elements/connectivity"].set_external(conn.data(), sim->n);
   mesh["topologies/mesh/elements/shape"] = "point";
 #endif
 
@@ -111,8 +111,37 @@ void Initialize(sph::ParticlesData<T> *sim,
                                                                 0 * sizeof(T),
                                                                 sim->NbofScalarfields * sizeof(T));
   mesh["fields/velocity/volume_dependent"].set("false");
+#endif
+
+#if defined (ASCENT_CUDA_ENABLED)
+  std::cout << __FILE__ << ": " << __LINE__ << ": copying individual fields data to device\n";
+// device_move allocates and uses set external to provide data on the device
+  int data_nbytes = sim->n * sizeof(T);
+#ifndef IMPLICIT_CONNECTIVITY_LIST
+  int data_nbytes2 = sim->n * sizeof(conduit_int32);
+  void *device_ptr = device_alloc(data_nbytes2);
+  copy_from_host_to_device(device_ptr, conn.data(), data_nbytes2);
+  mesh["topologies/mesh/elements/connectivity"].set_external(static_cast<conduit_int32*>(device_ptr), sim->n);
+  conn.clear();
+#endif
+
+  addField_gpu(mesh, "rho" , sim->rho.data(), sim->n); sim->rho.clear();
+  //addField_gpu(mesh, "topologies/mesh/elements/connectivity"], sim->n*sizeof(conduit_int32));
+  addField_gpu(mesh, "Temperature", sim->temp.data(),             sim->n); sim->temp.clear();
+  addField_gpu(mesh, "mass", sim->mass.data(),                    sim->n); sim->mass.clear();
+  addField_gpu(mesh, "vx", sim->vx.data(), sim->n); sim->vx.clear();
+  addField_gpu(mesh, "vy", sim->vy.data(), sim->n); sim->vy.clear();
+  addField_gpu(mesh, "vz", sim->vz.data(), sim->n); sim->vz.clear();
+
+  T* xx = addField_gpu(mesh, "x", sim->x.data(), sim->n); sim->x.clear();
+  T* yy = addField_gpu(mesh, "y", sim->y.data(), sim->n); sim->y.clear();
+  T* zz = addField_gpu(mesh, "z", sim->z.data(), sim->n); sim->z.clear();
+  mesh["coordsets/coords/values/x"].set_external(xx, sim->n);
+  mesh["coordsets/coords/values/y"].set_external(yy, sim->n);
+  mesh["coordsets/coords/values/z"].set_external(zz, sim->n);
+  //addCoordinates(mesh, sim->x, sim->y, sim->z);
 #else
-  // first the coordinates
+    // first the coordinates
   addCoordinates(mesh, sim->x, sim->y, sim->z);
   
   // then the variables
@@ -138,28 +167,6 @@ void Initialize(sph::ParticlesData<T> *sim,
   */
 #endif
 
-#if defined (ASCENT_CUDA_ENABLED)
-#ifdef STRIDED_SCALARS
-    // Future work
-#else
-// device_move allocates and uses set external to provide data on the device
-  int data_nbytes = sim->n * sizeof(T);
-    
-  device_move(mesh["coordsets/coords/values/x"],             data_nbytes);
-  device_move(mesh["coordsets/coords/values/y"],             data_nbytes);
-  device_move(mesh["coordsets/coords/values/z"],             data_nbytes);
-  device_move(mesh["topologies/mesh/elements/connectivity"], sim->n*sizeof(conduit_int32));
-  device_move(mesh["fields/rho/values"],                     data_nbytes);
-  device_move(mesh["fields/Temperature/values"],             data_nbytes);
-  device_move(mesh["fields/mass/values"],                    data_nbytes);
-  device_move(mesh["fields/vx/values"],                      data_nbytes);
-  device_move(mesh["fields/vy/values"],                      data_nbytes);
-  device_move(mesh["fields/vz/values"],                      data_nbytes);
-  device_move(mesh["fields/x/values"],                       data_nbytes);
-  device_move(mesh["fields/y/values"],                       data_nbytes);
-  device_move(mesh["fields/z/values"],                       data_nbytes);
-#endif
-#endif
   conduit::Node verify_info;
   if(!conduit::blueprint::mesh::verify(mesh,verify_info))
   {

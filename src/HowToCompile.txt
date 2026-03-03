@@ -12,23 +12,32 @@ cmake -B buildAscent -S . \
       -DAscent_DIR=/local/apps/Ascent/install/ascent-checkout/lib/cmake/ascent
 cmake --build buildAscent
 
-cmake -B buildAscent-Cuda -S . \
-      -DSTRIDED_SCALARS:BOOL=OFF \
-      -DCMAKE_CUDA_HOST_COMPILER=/usr/bin/g++-12 \
+cmake -S . -B buildAscent-Cuda \
       -DINSITU=Ascent \
-      -DAscent_DIR=/local/apps/Ascent-cuda/install/ascent-checkout/lib/cmake/ascent
+      -DCMAKE_CUDA_ARCHITECTURES=86 \
+      -DAscent_DIR=/local/apps/Ascent-cuda/install/ascent-checkout/lib/cmake/ascent \
+      -DHDF5_DIR=/local/apps/spack/opt/spack/linux-skylake/hdf5-1.14.6-4nuqaojegkryqtde7lmybcbyaof6mfy5/cmake \
+      -DSPH_DOUBLE=OFF -DCAN_LOAD_H5Part=ON
+      
 cmake --build buildAscent-Cuda
+cd buildAscent-Cuda
+make && ./bin/dummysph_ascent --h5part /local/data/SPH-EXA/dump_turbulence.h5 --rendering rho
 
 ##############################################
 # to test the AOS data layout with the optional TIPSY data loader 
 ##############################################
-cmake -S . -B buildVTKmStrided \
-      -DINSITU=VTK-m \
-      -DVTKm_DIR=/local/apps/Ascent/install/vtk-m-v2.2.0/lib/cmake/vtkm-2.2 \
-      -DSTRIDED_SCALARS:BOOL=ON -DCAN_LOAD_TIPSY=ON
-cmake --build buildVTKmStrided
-cd buildVTKmStrided
-make && ./bin/dummysph_vtkm --tipsy /local/data/Tipsy/hr8799_bol_bd1.017300
+cmake -S . -B buildViskores-Cuda \
+      -DINSITU=Viskores \
+      -DCMAKE_CUDA_ARCHITECTURES=86 \
+      -DViskores_DIR=/local/apps/viskores-build-cuda/lib/cmake/viskores-1.1 \
+      -DHDF5_DIR=/local/apps/spack/opt/spack/linux-skylake/hdf5-1.14.6-4nuqaojegkryqtde7lmybcbyaof6mfy5/cmake \
+      -DSPH_DOUBLE=OFF -DCAN_LOAD_H5Part=ON
+
+cmake --build buildViskores-Cuda
+cd buildViskores-Cuda
+make && ./bin/dummysph_viskores --h5part /local/data/SPH-EXA/dump_turbulence.h5 --histsampling rho
+
+
 
 ##############################################
 
@@ -44,11 +53,12 @@ cd buildAscentStrided
 make && ./bin/dummysph_ascent --tipsy /local/data/Tipsy/hr8799_bol_bd1.017300
 
 ##############################################
-
+spack load libcatalyst/b
 cmake -S . -B buildCatalyst2  \
       -DINSITU=Catalyst \
-      -Dcatalyst_DIR=`spack location -i libcatalyst`/lib/cmake/catalyst-2.0 \
-      -DSTRIDED_SCALARS:BOOL=ON -DCAN_LOAD_TIPSY=ON
+      -DCMAKE_CUDA_ARCHITECTURES=86 \
+      -DSPH_DOUBLE=OFF -DCAN_LOAD_H5Part=ON \
+      -DHDF5_DIR=/local/apps/spack/opt/spack/linux-skylake/hdf5-1.14.6-4nuqaojegkryqtde7lmybcbyaof6mfy5/cmake
 
 cmake --build buildCatalyst2
 

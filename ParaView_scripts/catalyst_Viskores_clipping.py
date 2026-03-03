@@ -20,18 +20,13 @@ renderView1.CameraParallelScale = 1.73205
 
 outline1 = Outline(registrationName='Outline1', Input=reader)
 outline1Display = Show(outline1)
-
-bounds = reader.GetDataInformation().GetBounds()
-
-clip1 = Clip(registrationName='Clip1', Input=reader)
-clip1.ClipType = 'Plane'
-clip1.ClipType.Normal = [0.0, 0.0, 1.0]
-clip1.ClipType.Origin = [(bounds[1]+bounds[0])*.5,
-                         (bounds[3]+bounds[2])*.5,
-                         (bounds[5]+bounds[4])*.5]
+                         
+vTKmClip1 = VTKmClip(registrationName='VTKmClip1', Input=reader)
+vTKmClip1.Scalars = ['POINTS', 'y']
+vTKmClip1.ClipValue = 0.
 
 varname = "rho"
-readerDisplay = Show(clip1, renderView1, 'GeometryRepresentation')
+readerDisplay = Show(vTKmClip1, renderView1, 'GeometryRepresentation')
 readerDisplay.Representation = 'Points'
 ColorBy(readerDisplay, ['POINTS', varname])
 readerDisplay.PointSize = 2.0

@@ -2,7 +2,7 @@
 #define _CUDA_HELPERS_INCLUDED_
 
 #include <cstring>
-#if defined (CAMP_HAVE_CUDA) || defined (ASCENT_CUDA_ENABLED)
+//#if defined (CAMP_HAVE_CUDA) || defined (ASCENT_CUDA_ENABLED)
 #include <cuda_runtime.h>
 
 static void cuda_check_status(cudaError_t status) {
@@ -12,7 +12,7 @@ static void cuda_check_status(cudaError_t status) {
         exit(1);
     }
 }
-#endif
+//#endif
 
 
 /*
@@ -25,14 +25,14 @@ code inspired from ascent/src/tests/ascent/t_ascent_gpu_data_source.cpp
 void *
 device_alloc(int size)
 {
-#if defined (ASCENT_CUDA_ENABLED)
+//#if defined (ASCENT_CUDA_ENABLED)
   void *buff;
   auto status = cudaMalloc(&buff, size);
   cuda_check_status(status);
   return buff;
-#else
-  return nullptr;
-#endif
+//#else
+  //return nullptr;
+//#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -49,10 +49,11 @@ device_free(void *ptr)
 void
 copy_from_device_to_host(void *dest, void *src, int size)
 {
-#if defined (ASCENT_CUDA_ENABLED)
-  cudaMemcpy(dest, src, size, cudaMemcpyDeviceToHost);
-  memcpy(dest,src,size);
-#endif
+//#if defined (ASCENT_CUDA_ENABLED)
+  auto status = cudaMemcpy(dest, src, size, cudaMemcpyDeviceToHost);
+  cuda_check_status(status);
+  //memcpy(dest,src,size);
+//#endif
 }
 
 
@@ -60,14 +61,15 @@ copy_from_device_to_host(void *dest, void *src, int size)
 void
 copy_from_host_to_device(void *dest, void *src, int size)
 {
-#if defined (ASCENT_CUDA_ENABLED)
+//#if defined (ASCENT_CUDA_ENABLED)
   auto status = cudaMemcpy(dest, src, size, cudaMemcpyHostToDevice);
+  //std::cout << "cudaMemcpyHostToDevice " << size << "bytes\n";
   //memcpy(dest,src,size);
   cuda_check_status(status);
-#endif
+//#endif
 }
 
-//-----------------------------------------------------------------------------
+/*
 void
 device_move(conduit::Node &data, int data_nbytes)
 {
@@ -78,5 +80,5 @@ device_move(conduit::Node &data, int data_nbytes)
   conduit::DataType dtype = data.dtype();
   data.set_external(dtype,device_ptr);
 }
-
+*/
 #endif

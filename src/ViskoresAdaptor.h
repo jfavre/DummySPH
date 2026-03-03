@@ -148,10 +148,10 @@ void Initialize(int argc, char* argv[], sph::ParticlesData<T> *sim)
   std::cout << "--------------------------" << std::endl;
   */
   /****************************************/
-  // https://vtk-m.readthedocs.io/en/v2.2.0/fancy-array-handles.html#composite-vector-arrays
+  // https://viskores.readthedocs.io/en/latest/fancy-array-handles.html
   
 #ifdef Viskores_ENABLE_CUDA
-  std::cout << "copying individual fields data to device\n";
+  std::cout << __FILE__ << ": " << __LINE__ << ": copying individual fields data to device\n";
   T *device_aos0  = device_alloc(sim->n, sim->mass.data());
   T *device_pos_x = device_alloc(sim->n, sim->x.data());
   T *device_pos_y = device_alloc(sim->n, sim->y.data());
@@ -161,7 +161,7 @@ void Initialize(int argc, char* argv[], sph::ParticlesData<T> *sim)
   T *device_vz    = device_alloc(sim->n, sim->vz.data());
   T *device_aos7  = device_alloc(sim->n, sim->rho.data());
   T *device_aos8  = device_alloc(sim->n, sim->temp.data());
-  
+
   auto aos0  = viskores::cont::make_ArrayHandle(device_aos0,  sim->n, viskores::CopyFlag::Off);
   auto pos_x = viskores::cont::make_ArrayHandle(device_pos_x, sim->n, viskores::CopyFlag::Off);
   auto pos_y = viskores::cont::make_ArrayHandle(device_pos_y, sim->n, viskores::CopyFlag::Off);
@@ -299,7 +299,7 @@ void Execute_HistSampling(const std::string &filename)
   using AssocType = viskores::cont::Field::Association;
   viskores::filter::resampling::HistSampling histsample;
   histsample.SetNumberOfBins(128);
-  histsample.SetSampleFraction(.01);
+  histsample.SetSampleFraction(.1);
   histsample.SetActiveField("rho", AssocType::Points);
   auto histsampleDataSet = histsample.Execute(dataSet);
 
