@@ -55,7 +55,7 @@ void Execute(sph::ParticlesData<T> *sim)
   mesh["coordsets/coords/type"] = "explicit";
   mesh["topologies/mesh/coordset"] = "coords";
 
-//#define IMPLICIT_CONNECTIVITY_LIST 1
+#define IMPLICIT_CONNECTIVITY_LIST 1
 #ifdef IMPLICIT_CONNECTIVITY_LIST
   mesh["topologies/mesh/type"] = "points";
 #else
@@ -97,8 +97,7 @@ void Execute(sph::ParticlesData<T> *sim)
 
 #else
 
-#define MOVE_DATA_TO_DEVICE 1
-#if defined (MOVE_DATA_TO_DEVICE)
+#ifdef MOVE_DATA_TO_DEVICE
   std::cout << __FILE__ << ": " << __LINE__ << ": copying individual fields data to device\n";
 // allocates new mem on device and uses set external to provide data on the device
 
@@ -162,7 +161,7 @@ void Execute(sph::ParticlesData<T> *sim)
   ConduitNode verify_info;
   if (!conduit_blueprint_verify("mesh", conduit_cpp::c_node(&mesh), conduit_cpp::c_node(&verify_info)))
     std::cerr << "ERROR: blueprint verify failed!" + verify_info.to_json() << std::endl;
-  else std::cerr << "PASS: blueprint verify passed!"<< std::endl;
+  //else std::cerr << "PASS: blueprint verify passed!"<< std::endl;
 
   catalyst_status err = catalyst_execute(conduit_cpp::c_node(&exec_params));
   if (err != catalyst_status_ok)

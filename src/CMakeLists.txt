@@ -31,6 +31,7 @@ set(C_SRCS
     Driver.cxx
 )
 
+option(CATALYST_USE_CUDA "Allocate memory and move data to CUDA device")
 option(STRIDED_SCALARS "Use interleaved scalar arrays") 
 option(CAN_LOAD_TIPSY  "Use Tipsy data instead of dummy data")
 option(CAN_LOAD_H5Part "Use H5Part data instead of dummy data")
@@ -68,6 +69,10 @@ else()
   message(STATUS "## No CUDA support")
 endif()
 
+if(INSITU STREQUAL "Ascent" AND CATALYST_USE_CUDA)
+    message(FATAL_ERROR "INSITU=Ascent and CATALYST_USE_CUDA=${CATALYST_USE_CUDA} cannot both be turned ON")
+endif()
+
 if(INSITU STREQUAL "Catalyst")
   find_package(catalyst REQUIRED PATHS "/local/apps/ParaView/")
   # we only need C++ compilers if we're building the Adaptor
@@ -93,6 +98,11 @@ endif()
 if(SPH_DOUBLE)
   target_compile_definitions(${exename} PRIVATE SPH_DOUBLE=1)
 endif()
+
+if(CATALYST_USE_CUDA)
+  target_compile_definitions(${exename} PRIVATE MOVE_DATA_TO_DEVICE=1)
+endif()
+
 
 elseif(INSITU STREQUAL "Ascent")
   # find_package(Ascent REQUIRED PATHS "/local/apps/ascent/install/lib/cmake/ascent")

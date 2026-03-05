@@ -121,7 +121,8 @@ class ParticlesData
 // N.B. x,y,z,temp are doubles, the others are float
 // thus, in Driver.cxx you must use   ParticlesData<float> *sim = new(ParticlesData<float>);
           //std::cout << __LINE__ << " :found valid HDF5 Step#0 " << std::endl;
-          std::cout << "Allocating 9 std::vectors of scalar fields of size " << sizeof(T) << " bytes" << std::endl;
+          std::cout << "Allocating 9 std::vectors of scalar fields of size " << sizeof(T)
+                    << " bytes to read " << this->n << " particles" << std::endl;
 
           this->x.resize(this->n);
           N = ReadHDF5Dataset("x", step_id, this->x.data(), sizeof(T));
@@ -148,7 +149,7 @@ class ParticlesData
           if(N != this->n) std::cerr << __LINE__ << "  Error reading dataset" << std::endl;
           
           this->rho.resize(this->n); // using alpha since 'rho' does not exist currently
-          N = ReadHDF5Dataset("alpha", step_id, this->rho.data(), sizeof(T));
+          N = ReadHDF5Dataset("rho", step_id, this->rho.data(), sizeof(T));
           if(N != this->n) std::cerr << __LINE__ << "  Error reading dataset" << std::endl;
           auto minIt = std::min_element(this->rho.begin(), this->rho.end());
           auto maxIt = std::max_element(this->rho.begin(), this->rho.end());
@@ -214,6 +215,8 @@ class ParticlesData
 #ifdef STRIDED_SCALARS
     this->scalarsAOS.resize(this->n);
 #else
+    std::cout << "Allocating 9 std::vectors of scalar fields of size " << sizeof(T)
+                    << " bytes to create " << this->n << " particles" << std::endl;
     this->x.resize(this->n);
     this->y.resize(this->n);
     this->z.resize(this->n);
