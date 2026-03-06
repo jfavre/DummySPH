@@ -55,7 +55,7 @@ void Execute(sph::ParticlesData<T> *sim)
   mesh["coordsets/coords/type"] = "explicit";
   mesh["topologies/mesh/coordset"] = "coords";
 
-#define IMPLICIT_CONNECTIVITY_LIST 1
+//#define IMPLICIT_CONNECTIVITY_LIST 1
 #ifdef IMPLICIT_CONNECTIVITY_LIST
   mesh["topologies/mesh/type"] = "points";
 #else
@@ -68,33 +68,21 @@ void Execute(sph::ParticlesData<T> *sim)
   mesh["topologies/mesh/coordset"].set("coords");
   
 #ifdef STRIDED_SCALARS
+#ifdef MOVE_DATA_TO_DEVICE
+  addStridedField_gpu(mesh, &sim->scalarsAOS[0].mass, sim->n, sim->NbofScalarfields);
+#else
   addStridedCoordinates(mesh, &sim->scalarsAOS[0].pos[0], sim->n, sim->NbofScalarfields);
   
-  addStridedField(mesh, "rho",  &sim->scalarsAOS[0].rho, sim->n, 0, sim->NbofScalarfields);
-  addStridedField(mesh, "temp", &sim->scalarsAOS[0].temp, sim->n, 0, sim->NbofScalarfields);
+  addStridedField(mesh, "rho",  &sim->scalarsAOS[0].mass, sim->n, 7, sim->NbofScalarfields);
+  addStridedField(mesh, "temp", &sim->scalarsAOS[0].mass, sim->n, 8, sim->NbofScalarfields);
 
-  addStridedField(mesh, "x", &(sim->scalarsAOS[0].pos[0]), sim->n, 0, sim->NbofScalarfields);
-  addStridedField(mesh, "y", &(sim->scalarsAOS[0].pos[0]), sim->n, 1, sim->NbofScalarfields);
-  addStridedField(mesh, "z", &(sim->scalarsAOS[0].pos[0]), sim->n, 2, sim->NbofScalarfields);
-  addStridedField(mesh, "vx", &(sim->scalarsAOS[0].vel[0]), sim->n, 0, sim->NbofScalarfields);
-  addStridedField(mesh, "vy", &(sim->scalarsAOS[0].vel[0]), sim->n, 1, sim->NbofScalarfields);
-  addStridedField(mesh, "vz", &(sim->scalarsAOS[0].vel[0]), sim->n, 2, sim->NbofScalarfields);
-  /*
-   there seems to be an offset I don't understand
-  mesh["fields/velocity/association"] = "vertex";
-  mesh["fields/velocity/topology"]    = "mesh";
-  mesh["fields/velocity/values/u"].set_external_float32_ptr(&(sim->scalarsAOS[0].vel[0]), sim->n,
-                                                                0,
-                                                                sim->NbofScalarfields * sizeof(T));
-  mesh["fields/velocity/values/v"].set_external_float32_ptr(&(sim->scalarsAOS[0].vel[0]), sim->n,
-                                                /                1 * sizeof(T),
-                                                                sim->NbofScalarfields * sizeof(T));
-  mesh["fields/velocity/values/w"].set_external_float32_ptr(&(sim->scalarsAOS[0].vel[0]), sim->n,
-                                                                2 * sizeof(T),
-                                                                sim->NbofScalarfields * sizeof(T));
-  mesh["fields/velocity/volume_dependent"].set("false");
-  */
-
+  addStridedField(mesh, "x", &(sim->scalarsAOS[0].mass), sim->n, 1, sim->NbofScalarfields);
+  addStridedField(mesh, "y", &(sim->scalarsAOS[0].mass), sim->n, 2, sim->NbofScalarfields);
+  addStridedField(mesh, "z", &(sim->scalarsAOS[0].mass), sim->n, 3, sim->NbofScalarfields);
+  addStridedField(mesh, "vx", &(sim->scalarsAOS[0].mass), sim->n, 4, sim->NbofScalarfields);
+  addStridedField(mesh, "vy", &(sim->scalarsAOS[0].mass), sim->n, 5, sim->NbofScalarfields);
+  addStridedField(mesh, "vz", &(sim->scalarsAOS[0].mass), sim->n, 6, sim->NbofScalarfields);
+#endif
 #else
 
 #ifdef MOVE_DATA_TO_DEVICE

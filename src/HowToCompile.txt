@@ -66,6 +66,8 @@ cd buildCatalyst2
 
 export CATALYST_IMPLEMENTATION_NAME=paraview
 export CATALYST_IMPLEMENTATION_PATHS=/local/apps/ParaView/dev/lib/catalyst
+export PARAVIEW_LOG_CATALYST_VERBOSITY=INFO
+export PV_PLUGIN_PATH=/local/apps/ParaView/dev/lib/paraview-6.1/plugins/VTKmFilters
 
 make && ./bin/dummysph_catalystV2 --tipsy /local/data/Tipsy/hr8799_bol_bd1.017300 \
  --catalyst ../../ParaView_scripts/catalyst_state.py

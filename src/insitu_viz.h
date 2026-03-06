@@ -74,6 +74,31 @@ void addStridedCoordinates(ConduitNode& mesh,
   mesh["coordsets/coords/values/y"].set_external(xyz, N, 1 * sizeof(T), stride * sizeof(T));
   mesh["coordsets/coords/values/z"].set_external(xyz, N, 2 * sizeof(T), stride * sizeof(T));
 }
+
+template<typename T>
+void addStridedField_gpu(ConduitNode& mesh,
+                     T* field,
+                     const size_t N,  // num_elements
+                     const int stride)
+{  
+  int data_nbytes = N * stride * sizeof(T);
+  void *device_ptr = device_alloc(data_nbytes);
+  copy_from_host_to_device(device_ptr, field, data_nbytes);
+  T* dev_ptr = static_cast<T*>(device_ptr);
+
+  addStridedCoordinates(mesh, dev_ptr + sizeof(T), N, stride);
+
+  addStridedField(mesh, "rho",  dev_ptr, N, 7, stride);
+  addStridedField(mesh, "temp", dev_ptr, N, 8, stride);
+
+  addStridedField(mesh, "x", dev_ptr, N, 1, stride);
+  addStridedField(mesh, "y", dev_ptr, N, 2, stride);
+  addStridedField(mesh, "z", dev_ptr, N, 3, stride);
+  addStridedField(mesh, "vx", dev_ptr, N, 4, stride);
+  addStridedField(mesh, "vy", dev_ptr, N, 5, stride);
+  addStridedField(mesh, "vz", dev_ptr, N, 6, stride);
+}
+
 #endif
   
 #ifdef USE_CATALYST

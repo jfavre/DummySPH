@@ -117,7 +117,7 @@ class ParticlesData
         hid_t step_id = H5Gopen(root_id, "Step#0", H5P_DEFAULT);
         if (step_id != H5I_INVALID_HID)
           {
-          int N;
+          size_t N;
 // N.B. x,y,z,temp are doubles, the others are float
 // thus, in Driver.cxx you must use   ParticlesData<float> *sim = new(ParticlesData<float>);
           //std::cout << __LINE__ << " :found valid HDF5 Step#0 " << std::endl;
